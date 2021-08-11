@@ -1,13 +1,6 @@
 setwd('/Volumes/bombus/Dropbox (University of Oregon)/beeMicrobes')
 
 rm(list=ls())
-library(vegan)
-library(bipartite)
-library(tidyr)
-library(dplyr)
-library(ecodist)
-library(fields)
-library(picante)
 
 #prepare matrices for bees and parasites (site by species)
 source("src/commPrep.R")
@@ -19,13 +12,11 @@ source("src/commPrep.R")
 source("src/initialize.R")
 source("src/runMRM.R")
 
-spec.wild <- spec.wild[spec.wild$Family != "Syrphidae",]
-
 ## ***************************************************************
 ##  distance matrices for parasites, bees, plants, microbiome, RBCL by
 ##  site
+## WILD BEES ONLY
 ##  ****************************************************************
-
 ## 16s
 microbes <- colnames(spec.wild)[grepl("16s", colnames(spec.wild))]
 
