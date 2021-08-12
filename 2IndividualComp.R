@@ -7,18 +7,19 @@ source("src/initialize.R")
 source("src/runMRM.R")
 source("src/mod_phylo_funs.R")
 source("src/makeIndivComm.R")
+source("src/commPrep.R")
 
 ## ***************************************************************
 ## 16s
 ##  **************************************************************
-microbes <- colnames(spec.wild)[grepl("16s",
-                                      colnames(spec.wild))]
+microbes <- colnames(spec)[grepl("16s",
+                                      colnames(spec))]
 
 
-comm.microbes.indiv <- makeIndivComm(spec.wild, microbes)
+comm.microbes.indiv <- makeIndivComm(spec, microbes)
 
 ## species
-dist.microbes <- as.matrix(vegan::vegdist(comm.microbes.indiv*100,
+dist.microbes <- as.matrix(vegan::vegdist(comm.microbes.indiv,
                                 "altGower"))
 ## phylo make distance matrix using merged tree, prune tree to match
 ## community dataset
@@ -44,11 +45,11 @@ save(dist.phylo.microbes, dist.microbes,
 ##  ****************************************************************
 ## RBCL
 ##  ****************************************************************
-rbcl <- colnames(spec.wild)[grepl("RBCL", colnames(spec.wild))]
-comm.rbcl.indiv <- makeIndivComm(spec.wild, rbcl)
+rbcl <- colnames(spec)[grepl("RBCL", colnames(spec))]
+comm.rbcl.indiv <- makeIndivComm(spec, rbcl)
 
 ## species
-dist.rbcl <- as.matrix(vegan::vegdist(comm.rbcl.indiv*100,
+dist.rbcl <- as.matrix(vegan::vegdist(comm.rbcl.indiv,
                                 "altGower"))
 ## phylo: prune tree to match community dataset
 prune.tree.rbcl <- prune.sample(comm.rbcl.indiv, tree.rbcl)
@@ -67,7 +68,7 @@ save(dist.phylo.rbcl, dist.rbcl,
 ## include Apidae as a dummy species to avoid the issue of having
 ## individuals dropped if they did not have any parasites.
 
-parasite.comm <- spec.wild[, c("UniqueID", "Apidae", parasites)]
+parasite.comm <- spec[, c("UniqueID", "Apidae", parasites)]
 parasite.comm <- parasite.comm[parasite.comm$Apidae == 1,]
 parasite.comm[, c("Apidae", parasites)] <-
     apply(parasite.comm[, c("Apidae", parasites)], 2, as.numeric)
@@ -80,9 +81,27 @@ dist.parasite <- as.matrix(vegan::vegdist(parasite.comm,
 
 save(dist.parasite, file="saved/distmats/indiv_parasite.Rdata")
 
+##  ****************************************************************
+## geo and bee commmunities
+##  ****************************************************************
+indiv <- rownames(dist.parasite)
+geo <- spec[,c("Site", "Lat", "Long", "UniqueID")][spec$UniqueID %in%
+                                                   rownames(dist.parasite),]
+dist.geo <- rdist.earth(geo[,c("Long", "Lat")])
+rownames(dist.geo) <- colnames(dist.geo)  <- geo$UniqueID
+
+
+## wild bees, excluding honey bees
+bee.comm <- makeCommStruct(spec.wild, "GenusSpecies")
+dist.bee <- as.matrix(vegdist(bee.comm$comm,
+                              "gower"))
+
 ## **********************************************************
 ##  MRMs  multiple regression on distance matrices
 ## **********************************************************
+load(file="saved/distmats/indiv_parasite.Rdata")
+load(file="saved/distmats/indiv_16s.Rdata")
+load(file="saved/distmats/indiv_rbcl.Rdata")
 
 ## make sure the sites line up
 in.all <- rownames(dist.phylo.microbes)[
@@ -94,51 +113,99 @@ dist.parasite <- dist.parasite[in.all, in.all]
 dist.rbcl <- dist.rbcl[in.all, in.all]
 dist.phylo.rbcl <- dist.phylo.rbcl[in.all, in.all]
 dist.phylo.microbes <- dist.phylo.microbes[in.all, in.all]
-dist.microbes <- dist.microbes[in.all, in.all]
+dist.geo <- dist.geo[in.all, in.all]
+
+sites.all <- spec$Site[match(in.all, spec$UniqueID)]
+
+dist.bee <- dist.bee[sites.all, sites.all]
 
 ## **********************************************************
 ## 16s phylo vs. parasite, rbcl species dissimilarity,
+
 MRM(as.dist(dist.phylo.microbes) ~  +
         as.dist(dist.parasite) +
+        as.dist(dist.geo) +
+        as.dist(dist.bee)  +
         as.dist(dist.rbcl),  nperm=10^4)
 
 ## 16s phylo vs. parasite, rbcl phylo dissimilarity
 MRM(as.dist(dist.phylo.microbes) ~  +
         as.dist(dist.parasite) +
+        as.dist(dist.geo) +
+        as.dist(dist.bee) +
         as.dist(dist.phylo.rbcl),  nperm=10^4)
+
+## same result with phylo and rbcl taxon dist matrices
 
 ##**********************************************************
-## parasite vs. 16s phylo, rbcl phylogenetic dissimilariy
-MRM(as.dist(dist.parasite) ~  +
-        as.dist(dist.phylo.microbes) +
-        as.dist(dist.phylo.rbcl),  nperm=10^4)
-
 ## parasite vs. 16s phylo, rbcl species dissimilariy
 MRM(as.dist(dist.parasite) ~  +
         as.dist(dist.phylo.microbes) +
+        as.dist(dist.geo) +
+        as.dist(dist.bee)  +
         as.dist(dist.rbcl),  nperm=10^4)
 
-## **********************************************************
-##  species specific MRMs
-## **********************************************************
+## parasite vs. 16s phylo, rbcl phylogenetic dissimilariy
+MRM(as.dist(dist.parasite) ~  +
+        as.dist(dist.phylo.microbes) +
+        as.dist(dist.geo) +
+        as.dist(dist.bee) +
+        as.dist(dist.phylo.rbcl),  nperm=10^4)
 
-## run these models for each species individually, but only if >10
-## individuals for each species
+## same result with phylo and rbcl taxon dist matrices
 
-species <- split(spec, spec$GenusSpecies)
-sp.ids <- lapply(species, function(x) x$UniqueID)
-sp.ids <- sp.ids[sapply(sp.ids, length) >= 10]
+## plotting
 
-## 16s
-mrm.16sPhylo.by.sp <- lapply(sp.ids, runMantelBeeSpecies,
-                    dist.microbe=dist.phylo.microbes,
-                    dist.plant=dist.rbcl,
-                    dist.parasite=dist.parasite)
+## combine into one dataset
+all.dists <- data.frame(parasites=dist.parasite[lower.tri(dist.parasite)],
+                        rbcl.phylo=dist.phylo.rbcl[lower.tri(dist.phylo.rbcl)],
+                        rbcl=dist.rbcl[lower.tri(dist.rbcl)],
+                        microbes=dist.phylo.microbes[lower.tri(dist.phylo.microbes)],
+                        geo=dist.geo[lower.tri(dist.geo)])
 
-mrm.16sPhylo.by.sp <- mrm.16sPhylo.by.sp[!sapply(mrm.16sPhylo.by.sp,
-                                                 function(x)
-                                                     is.na(x[1]))]
+sites <- spec$Site[match(rownames(dist.geo), spec$UniqueID)]
+combos <- outer(sites, sites, FUN=paste)
+all.dists$Sites <-  combos[lower.tri(combos)]
 
-save(mrm.16sPhylo.by.sp, mrm.16s.by.sp,
-     file="saved/distmats/mrm16sPhylo.Rdata")
+species <- spec$GenusSpecies[match(rownames(dist.geo), spec$UniqueID)]
+combos.sp <- outer(species, species, FUN=paste)
+all.dists$Species <-  combos.sp[lower.tri(combos.sp)]
+
+
+
+par <- ggplot(all.dists, aes(x=rbcl,y=parasites)) + geom_point() +
+  xlab("Pollen community dissimilarity") +
+    ylab("Pathobiome dissimilarity")
+
+microbe <- ggplot(all.dists, aes(x=rbcl,y=microbes)) + geom_point() +
+      xlab("Pollen community dissimilarity") +
+    ylab("Microbiome  dissimilarity")
+
+all <- grid.arrange(par, microbe)
+
+ggsave("figures/MRMsIndiv.pdf", all, height=8, width=4)
+
+## ## **********************************************************
+## ##  species specific MRMs
+## ## **********************************************************
+
+## ## run these models for each species individually, but only if >10
+## ## individuals for each species
+
+## species <- split(spec, spec$GenusSpecies)
+## sp.ids <- lapply(species, function(x) x$UniqueID)
+## sp.ids <- sp.ids[sapply(sp.ids, length) >= 10]
+
+## ## 16s
+## mrm.16sPhylo.by.sp <- lapply(sp.ids, runMantelBeeSpecies,
+##                     dist.microbe=dist.phylo.microbes,
+##                     dist.plant=dist.rbcl,
+##                     dist.parasite=dist.parasite)
+
+## mrm.16sPhylo.by.sp <- mrm.16sPhylo.by.sp[!sapply(mrm.16sPhylo.by.sp,
+##                                                  function(x)
+##                                                      is.na(x[1]))]
+
+## save(mrm.16sPhylo.by.sp, mrm.16s.by.sp,
+##      file="saved/distmats/mrm16sPhylo.Rdata")
 
