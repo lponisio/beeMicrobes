@@ -42,6 +42,46 @@ dist.microbes <- dist.microbes[
 save(dist.phylo.microbes, dist.microbes,
      file="saved/distmats/indiv_16s.Rdata")
 
+
+group.info <- regmatches(prune.tree.16s$tip.label,regexpr("D\\_4\\_\\_[A-Za-z]+",
+                                            prune.tree.16s$tip.label))
+group.info <- gsub("D\\_4\\_\\_", "", group.info)
+
+tip.lab <- regmatches(prune.tree.16s$tip.label,regexpr("D\\_5\\_\\_[A-Za-z]+",
+                                            prune.tree.16s$tip.label))
+tip.lab <- gsub("D\\_5\\_\\_", "", tip.lab)
+
+
+prune.tree.16s <- groupOTU(prune.tree.16s, group.info)
+ggtree(prune.tree.16s, aes(color=group), layout='circular') +
+    geom_tiplab(size=1, aes(angle=angle))
+
+
+prune.tree.16s$tip.label <- tip.lab
+
+names(group.info) <- prune.tree.16s$tip.label
+
+td <- data.frame(node = nodeid(prune.tree.16s, names(group.info)),
+                 trait = group.info)
+
+td$node <- as.numeric(td$node)
+tree.d <- full_join(prune.tree.16s, td, by = 'node')
+
+
+p1 <- ggtree(tree.d, aes(color=trait), layout = 'circular',
+        ladderize = FALSE, size=2)  +
+    geom_tiplab(hjust = -.1) +
+    xlim(0, 1.2) +
+    theme(legend.position = c(.05, .85))
+
+
+prune.tree.16s <- groupClade(prune.tree.16s, groupInfo)
+ggtree(prune.tree.16s, aes(color=groupInfo), layout='circular') + geom_tiplab(size=1, aes(angle=angle))
+
+
+
+ggtree(prune.tree.16s, layout='circular') + geom_tiplab(size=1, aes(angle=angle))
+
 ##  ****************************************************************
 ## RBCL
 ##  ****************************************************************
@@ -171,15 +211,13 @@ species <- spec$GenusSpecies[match(rownames(dist.geo), spec$UniqueID)]
 combos.sp <- outer(species, species, FUN=paste)
 all.dists$Species <-  combos.sp[lower.tri(combos.sp)]
 
+par <- ggplot(all.dists, aes(y=parasites,x=microbes)) + geom_point() +
+  ylab("Pathobiome community dissimilarity") +
+    xlab("Microbiome dissimilarity")
 
-
-par <- ggplot(all.dists, aes(x=rbcl,y=parasites)) + geom_point() +
-  xlab("Pollen community dissimilarity") +
-    ylab("Pathobiome dissimilarity")
-
-microbe <- ggplot(all.dists, aes(x=rbcl,y=microbes)) + geom_point() +
-      xlab("Pollen community dissimilarity") +
-    ylab("Microbiome  dissimilarity")
+microbe <- ggplot(all.dists, aes(y=rbcl,x=microbes)) + geom_point() +
+      ylab("Pollen community dissimilarity") +
+    xlab("Microbiome  dissimilarity")
 
 all <- grid.arrange(par, microbe)
 
