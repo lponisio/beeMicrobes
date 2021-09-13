@@ -143,8 +143,8 @@ parasite1 <- ggplot(fe_only,
     stat_interval(alpha = 0.5) +
     geom_line(data = fe_only_mean,
               color = "red", lwd = 2) +
-    labs(y= "Pathobiome originality",
-         x = "Functional trait originality") +
+    labs(y= "Pathobiome distinctness",
+         x = "Trait distinctness") +
     scale_color_viridis(discrete=TRUE) +
     geom_point(data = sp.means,
                mapping = aes(x = originality, y = Parasite_originality,
@@ -195,7 +195,7 @@ micro1 <- ggplot(fe_only,
     stat_interval(alpha = 0.5) +
     geom_line(data = fe_only_mean,
               color = "red", lwd = 2) +
-    labs(y= "Microbiome originality",
+    labs(y= "Microbiome distinctness",
          x = "Individual-level diet breadth") +
     scale_color_viridis(discrete=TRUE) +
     geom_point(data = all.indiv.mets,
@@ -245,7 +245,7 @@ micro2 <- ggplot(fe_only,
     stat_interval(alpha = 0.5) +
     geom_line(data = fe_only_mean,
               color = "red", lwd = 2) +
-    labs(y= "Microbiome originality",
+    labs(y= "Microbiome distinctness",
          x = "Species-level diet breadth") +
     scale_color_viridis(discrete=TRUE) +
     geom_point(data = all.indiv.mets,
