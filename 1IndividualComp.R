@@ -1,5 +1,11 @@
 ## setwd('/Volumes/bombus/Dropbox (University of Oregon)/beeMicrobes')
 
+## this code takes individual-level bee data to see if the composition of microbiome is related to composition of pathobiome
+## uses MRM, an extension of mantel tests, which allows for multiple matrics. We included RBCL and geo to account for diet breadth
+## for 16s, use phylogenetic distances to matrix distance matrix
+## for RBCL, use species taxonomic distances to construct distance matrix
+
+setwd("~/Dropbox/beeMicrobes")
 rm(list=ls())
 source("src/initialize.R")
 
