@@ -5,7 +5,7 @@
 ## for 16s, use phylogenetic distances to matrix distance matrix
 ## for RBCL, use species taxonomic distances to construct distance matrix
 
-setwd("~/Dropbox/beeMicrobes")
+##setwd("~/Dropbox/beeMicrobes")
 rm(list=ls())
 source("src/initialize.R")
 
