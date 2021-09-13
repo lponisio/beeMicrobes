@@ -1,4 +1,4 @@
-setwd('/Volumes/bombus/Dropbox (University of Oregon)/beeMicrobes')
+## setwd('/Volumes/bombus/Dropbox (University of Oregon)/beeMicrobes')
 
 rm(list=ls())
 source("src/initialize.R")
