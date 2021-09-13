@@ -5,6 +5,16 @@ library(dplyr)
 library(ecodist)
 library(fields)
 library(picante)
+library(gridExtra)
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("ggtree")
+
+
+library(ggplot2)
+library(ggtree)
 
 load('data/spec_RBCL_16s.Rdata')
 
@@ -19,7 +29,7 @@ no.apidae <- spec$UniqueID[spec$Apidae != 1
 
 print(paste("not dropping w/o apidae", no.apidae))
 
-spec.wild <- spec[spec$Family != "Syrphidae",]
+spec <- spec[spec$Family != "Syrphidae",]
 spec.wild <- spec[spec$GenusSpecies != "Apis mellifera",]
 
 load('data/trees.Rdata')
