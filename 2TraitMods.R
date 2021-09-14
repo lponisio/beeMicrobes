@@ -1,11 +1,18 @@
 ## setwd('/Volumes/bombus/Dropbox (University of Oregon)/beeMicrobes')
 
+## Bee trait distinctness and diet breadth may drive microbiome and pathobiome dynamics
+## We build formulas for the following response variables: microbiome distincess, microbiome diversity, parasite distincess, and parasite richness
+## With the following explanatory variables: individual-level diet breadth (RBCl degree), species-level diet breadth (r.degree), and trait distinctness
+## Note that what we call distinctiness in the manuscript is calculated as "originality" in Coux et al. 2016
+
 rm(list=ls())
 source("src/init_bayes.R")
 load('data/allNetSums.RData')
 
 ## change to the number of cores you would liek to run on
-ncores <- 3
+
+ncores <- 2
+
 all.indiv.mets$PossibleParasite <- 5
 
 yvars <- c("Parasite_originality",
@@ -140,7 +147,7 @@ parasite1 <- ggplot(fe_only,
     geom_line(data = fe_only_mean,
               color = "red", lwd = 2) +
     labs(y= "Pathobiome distinctness",
-         x = "Functional trait originality") +
+         x = "Trait distinctness") +
     scale_color_viridis(discrete=TRUE) +
     geom_point(data = sp.means,
                mapping = aes(x = originality, y = Parasite_originality,
