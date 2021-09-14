@@ -47,15 +47,11 @@ mod.par.orig  <- brm(func.formulas[[1]],  data = all.indiv.mets,
                      inits=0,
                      control = list(adapt_delta = 0.99))
 
-
-save(mod.par.orig, all.indiv.mets,
+save(mod.par.orig,
      file="saved/parasiteOrigFit.Rdata")
-
-
 mcmc_trace(mod.par.orig)
 ggsave("figures/diagnostics/parOrigBayesDiag.pdf",
        height=11, width=8.5)
-
 write.ms.table(mod.par.orig, "parOrig")
 
 
@@ -86,10 +82,8 @@ mod.par.div  <- brm(func.formulas[[2]],
                     inits=0,
                     control = list(adapt_delta = 0.99))
 
-save(mod.par.div, all.indiv.mets,
+save(mod.par.div,
      file="saved/parasiteDivFit.Rdata")
-
-
 mcmc_trace(mod.par.div)
 ggsave("figures/diagnostics/parDivBayesDiag.pdf",
        height=11, width=8.5)
@@ -98,35 +92,32 @@ write.ms.table(mod.par.div, "parDiv")
 ### micro originality
 mod.micro.orig  <- brm(func.formulas[[3]],  data = all.indiv.mets,
                        cores=ncores,
-                       iter = 10^3,
+                       iter = 10^5,
                        chains = 3,
+                       inits=0,
                        control = list(adapt_delta = 0.99))
 
-
-save(mod.micro.orig, all.indiv.mets,
+save(mod.micro.orig,
      file="saved/microbeOrigFit.Rdata")
-
-
 mcmc_trace(mod.micro.orig)
-ggsave("figures/bayesMods/microOrigBayesDiag.pdf",
+ggsave("figures/diagnostics/microOrigBayesDiag.pdf",
        height=11, width=8.5)
-
 write.ms.table(mod.micro.orig, "microOrig")
 
 ## micro diversity
 mod.micro.div  <- brm(func.formulas[[3]],  data = all.indiv.mets,
                       cores=ncores,
-                      iter = 10^3,
+                      iter = 10^5,
                       chains = 3,
+                      inits=0,
                       control = list(adapt_delta = 0.99))
 
+save(mod.micro.div,
+     file="saved/microbeDivFit.Rdata")
 mcmc_trace(mod.micro.div)
 ggsave("figures/diagnostics/microDivBayesDiag.pdf",
        height=11, width=8.5)
-
 write.ms.table(mod.micro.div, "micrDiv")
-
-
-save(mod.micro.div, all.indiv.mets,
+save(mod.micro.div,
      file="saved/microbeDivFit.Rdata")
 
