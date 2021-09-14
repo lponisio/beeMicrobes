@@ -5,7 +5,7 @@ source("src/init_bayes.R")
 load('data/allNetSums.RData')
 
 ## change to the number of cores you would liek to run on
-ncores <- 10
+ncores <- 3
 all.indiv.mets$PossibleParasite <- 5
 
 yvars <- c("Parasite_originality",
@@ -30,6 +30,7 @@ mod.par.orig  <- brm(func.formulas[[1]],  data = all.indiv.mets,
                      cores=ncores,
                      iter = 10^5,
                      chains = 3,
+                     inits=0,
                      control = list(adapt_delta = 0.99))
 
 mcmc_trace(mod.par.orig)
@@ -138,7 +139,7 @@ parasite1 <- ggplot(fe_only,
     stat_interval(alpha = 0.5) +
     geom_line(data = fe_only_mean,
               color = "red", lwd = 2) +
-    labs(y= "Pathobiome originality",
+    labs(y= "Pathobiome distinctness",
          x = "Functional trait originality") +
     scale_color_viridis(discrete=TRUE) +
     geom_point(data = sp.means,
@@ -190,7 +191,7 @@ micro1 <- ggplot(fe_only,
     stat_interval(alpha = 0.5) +
     geom_line(data = fe_only_mean,
               color = "red", lwd = 2) +
-    labs(y= "Microbiome originality",
+    labs(y= "Microbiome distinctness",
          x = "Individual-level diet breadth") +
     scale_color_viridis(discrete=TRUE) +
     geom_point(data = all.indiv.mets,
@@ -240,7 +241,7 @@ micro2 <- ggplot(fe_only,
     stat_interval(alpha = 0.5) +
     geom_line(data = fe_only_mean,
               color = "red", lwd = 2) +
-    labs(y= "Microbiome originality",
+    labs(y= "Microbiome distinctness",
          x = "Species-level diet breadth") +
     scale_color_viridis(discrete=TRUE) +
     geom_point(data = all.indiv.mets,
