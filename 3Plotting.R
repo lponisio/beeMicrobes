@@ -14,6 +14,68 @@ load(file="saved/MicrobeDivFit.Rdata")
 ###########################################################################
 ## plotting
 ###########################################################################
+
+sp.cols <- viridis(length(unique(all.indiv.mets$GenusSpecies)))
+
+sp.means <- all.indiv.mets  %>%
+    group_by(GenusSpecies, originality, Site, r.degree) %>%
+    summarize(Parasite_originality = median(Parasite_originality,
+                                            na.rm=TRUE),
+              Micro_originality =  median(Micro_originality,
+                                          na.rm=TRUE),
+              Micro_partner.diversity =  median(Micro_partner.diversity,
+                                            na.rm=TRUE),
+              )
+
+p1.parasite  <- mod.par.orig %>%
+    spread_draws(b_Intercept,
+                 b_scaleoriginality) %>%
+    mutate(originality =
+               list(seq(min(all.indiv.mets$originality, na.rm=TRUE),
+                        max(all.indiv.mets$originality, na.rm=TRUE),
+                        0.01))) %>%
+    unnest(originality) %>%
+    mutate(pred = (b_Intercept +
+               b_scaleoriginality*originality))   %>%
+               group_by(originality) %>%
+               summarise(pred_m = mean(pred, na.rm = TRUE),
+                         pred_low_95 = quantile(pred, prob = 0.025),
+                         pred_high_95 = quantile(pred, prob = 0.975),
+                         pred_low_90 = quantile(pred, prob = 0.05),
+                         pred_high_90 = quantile(pred, prob = 0.95),
+                         pred_low_85 = quantile(pred, prob = 0.075),
+                         pred_high_85 = quantile(pred, prob = 0.925)) %>%
+               ggplot(aes(x = originality, y = pred_m)) +
+               geom_line() +
+               geom_ribbon(aes(ymin = pred_low_95, ymax = pred_high_95), alpha=0.2,
+                           fill="darkolivegreen") +
+               geom_ribbon(aes(ymin = pred_low_90, ymax = pred_high_90), alpha=0.2,
+                           fill="darkolivegreen") +
+               geom_ribbon(aes(ymin = pred_low_85, ymax = pred_high_85), alpha=0.2,
+                           fill="darkolivegreen") +
+               ylab("Pathobiome distinctness") +
+               xlab("Trait distinctness") +
+               ylim(quantile(sp.means$Parasite_originality, c(0, .95),
+                             na.rm=TRUE)) +
+               xlim(range(all.indiv.mets$originality))  +
+               theme(panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     panel.background = element_blank(),
+                     axis.line = element_line(colour = "black"),
+                     axis.title.x = element_text(size=16),
+                     axis.title.y = element_text(size=16),
+                     text = element_text(size=16),
+                     legend.position = "none") +
+               geom_point(data = sp.means,
+                          mapping = aes(x = originality, y = Parasite_originality,
+                                        color =  GenusSpecies)) +
+    scale_color_viridis(discrete=TRUE)
+
+ggsave("figures/parasite_originality.pdf",
+       height=4, width=5)
+
+
+
 sp.cols <- viridis(length(unique(all.indiv.mets$GenusSpecies)))
 
 sp.means <- all.indiv.mets  %>%
