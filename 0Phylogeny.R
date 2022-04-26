@@ -49,7 +49,7 @@ phylo <-
 
 co.var.mat  <- ape::vcv.phylo(phylo)
 
-save(co.var.mat, phylo, file="data/covarmatrix.Rdata")
+save(co.var.mat, phylo, file="data/covarmatrix_taxon.Rdata")
 
 
 ## **********************************************************************
@@ -73,7 +73,14 @@ dated.tree$tip.label[dated.tree$tip.label == "Lasioglossum spE"] <-
 dated.tree$tip.label[dated.tree$tip.label == "Sphecodes sp"] <-
     "Sphecodes spp."
 
-no.tips <- unique(spec$GenusSpecies[!spec$GenusSpecies %in% dated.tree$tip.label])
+no.tips <- unique(spec$GenusSpecies[!spec$GenusSpecies %in%
+                                    dated.tree$tip.label])
+
+no.tips <- no.tips[no.tips != "Apis mellifera"]
+
+genus.no.tips <- sapply(strsplit(no.tips, " "),
+                       function (x) x[[1]])
+
 
 ## ## pruning the tree so tips match
 ## phylo <-
@@ -115,7 +122,7 @@ out.var3 <- out.var2[, !duplicated(colnames(out.var2))]
 write.csv(out.var3, file=
                           "/Volumes/bombus/Dropbox (University of Oregon)/sunflower_saved/data/tree/hedgerow_covar_mat_no_dups.csv")
 
-problem.genera <- c("Hylaeus", "Lasioglossum",
+problem.genera <- c("Agapostemon", "Hylaeus", "Lasioglossum",
                     "Xylocopa",
                     "Triepeolus", "Ashmeadiella")
 
@@ -127,61 +134,67 @@ genus.co.var <- sapply(strsplit(new.tips, " "),
 ## new.tips.problem.gen <- new.tips[genus.co.var %in% problem.genera]
 
 empty.problem.gen.cols <- matrix(rep(NA,
-                                nrow(out.var3)*length(problem.genera)),
-                            ncol=length(problem.genera))
+                                nrow(out.var3)*length(no.tips)),
+                            ncol=length(no.tips))
 
 rownames(empty.problem.gen.cols) <- rownames(out.var3)
-colnames(empty.problem.gen.cols) <- problem.genera
+colnames(empty.problem.gen.cols) <- no.tips
 
 out.var4 <- cbind(out.var3, empty.problem.gen.cols)
 
-
 empty.problem.gen.rows <- matrix(rep(NA,
-                                ncol(out.var4)*length(problem.genera)),
-                            nrow=length(problem.genera))
+                                ncol(out.var4)*length(no.tips)),
+                            nrow=length(no.tips))
 
 colnames(empty.problem.gen.rows) <- colnames(out.var4)
-rownames(empty.problem.gen.rows) <- problem.genera
+rownames(empty.problem.gen.rows) <- no.tips
 
 out.var5 <- rbind(out.var4, empty.problem.gen.rows)
 
-## out.var.problem.gen <- vector(mode="list",
-##                               length=length(problem.genera))
-
-## names(out.var.problem.gen) <- problem.genera
-
-out.var4 <- out.var3
 
 for(genus in problem.genera){
     print(genus)
     co.var.mat.sub <- out.var3[genus.co.var  ==
                                genus, ]
-    mean.mat <- apply(co.var.mat.sub, 2, mean, rm.na=TRUE)
-
+    if(is.matrix(co.var.mat.sub)){
+        mean.mat <- apply(co.var.mat.sub, 2, mean, rm.na=TRUE)
+    } else {
+        mean.mat <- co.var.mat.sub
+    }
     ## out.var4  <- cbind(out.var4, mean.mat)
     ## colnames(out.var4)[colnames(out.var3) == "mean.mat"] <- genus
 
     mean.genus <- rep(NA, length(problem.genera))
     names(mean.genus) <- problem.genera
-
     for(j in problem.genera){
-        co.var.mat.sub.sub <- co.var.mat.sub[, genus.co.var  ==
-                                               j]
-         mean.genus[j] <- mean(co.var.mat.sub.sub)
+        if(is.matrix(co.var.mat.sub)){
+            co.var.mat.sub.sub <-
+                co.var.mat.sub[, genus.co.var  ==  j]
+        } else{
+            co.var.mat.sub.sub <-
+                co.var.mat.sub[genus.co.var  ==  j]
+        }
+        mean.genus[j] <- mean(co.var.mat.sub.sub)
+    }
+    reped.mean.genus <- mean.genus[genus.no.tips]
+    names(reped.mean.genus) <- no.tips
+
+    these.tips <- no.tips[genus.no.tips == genus]
+
+    for(k in these.tips){
+        out.var5[k, ] <- c(mean.mat, reped.mean.genus)
+        out.var5[, k ] <- c(mean.mat,  reped.mean.genus)
     }
 
-    out.var5[genus, ] <- c(mean.mat, mean.genus)
-    out.var5[, genus ] <- c(mean.mat, mean.genus)
 
 }
 
 write.csv(out.var5, file=
                           "/Volumes/bombus/Dropbox (University of Oregon)/sunflower_saved/data/tree/hedgerow_covar_mat_problem_genera.csv")
 
+co.var.mat <- out.var5
 
-genus.no.tips <-  sapply(strsplit(no.tips, " "),
-                         function (x) x[[1]])
+save(co.var.mat, dated.tree, file="data/covarmatrix.Rdata")
 
-
-
-save(out.var5, dated.tree, file="data/covarmatrix.Rdata")
+unique(spec$GenusSpecies[!spec$GenusSpecies %in%
+                         rownames(out.var5)])
