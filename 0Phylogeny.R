@@ -4,57 +4,58 @@ rm(list=ls())
 source("src/initialize.R")
 
 ## load the compiled tree
-dated.tree <- read.tree("data/phylogenies/hedgerowsPhylo.new")
+## dated.tree <- read.tree("data/phylogenies/hedgerowsPhylo.new")
 
-## cleaning so the tips match the species in the dataset
+## ## cleaning so the tips match the species in the dataset
 
-dated.tree$tip.label <- gsub("_", " ", dated.tree$tip.label,
-                             fixed=TRUE)
-dated.tree$tip.label <- gsub("-Dialictus-", " ", dated.tree$tip.label,
-                             fixed=TRUE)
-dated.tree$tip.label <- gsub("-Evylaeus-", " ", dated.tree$tip.label,
-                             fixed=TRUE)
-dated.tree$tip.label <- gsub("   ", " ", dated.tree$tip.label,
-                             fixed=TRUE)
+## dated.tree$tip.label <- gsub("_", " ", dated.tree$tip.label,
+##                              fixed=TRUE)
+## dated.tree$tip.label <- gsub("-Dialictus-", " ", dated.tree$tip.label,
+##                              fixed=TRUE)
+## dated.tree$tip.label <- gsub("-Evylaeus-", " ", dated.tree$tip.label,
+##                              fixed=TRUE)
+## dated.tree$tip.label <- gsub("   ", " ", dated.tree$tip.label,
+##                              fixed=TRUE)
 
-spec$GenusSpecies[spec$GenusSpecies == "Lasioglossum tegulariforme"] <- "Lasioglossum tegulare group"
+## spec$GenusSpecies[spec$GenusSpecies == "Lasioglossum tegulariforme"] <- "Lasioglossum tegulare group"
 
-spec$GenusSpecies[spec$GenusSpecies == "Lasioglossum sp. e"] <- "Lasioglossum granosum"
+## spec$GenusSpecies[spec$GenusSpecies == "Lasioglossum sp. e"] <- "Lasioglossum granosum"
 
-spec$GenusSpecies[spec$GenusSpecies == "Lasioglossum sp. d"] <-
-    "Lasioglossum diversopunctatum"
+## spec$GenusSpecies[spec$GenusSpecies == "Lasioglossum sp. d"] <-
+##     "Lasioglossum diversopunctatum"
 
-spec$GenusSpecies[spec$GenusSpecies == "Ashmeadiella sp."] <- "Ashmeadiella bucconis denticulata"
+## spec$GenusSpecies[spec$GenusSpecies == "Ashmeadiella sp."] <- "Ashmeadiella bucconis denticulata"
 
-spec$GenusSpecies[spec$GenusSpecies == "Hylaeus morphoA"] <-
-    "Hylaeus bisinuatus"
-spec$GenusSpecies[spec$GenusSpecies == "Hylaeus morphoB"] <-
-    "Hylaeus calvus"
-spec$GenusSpecies[spec$GenusSpecies == "Hylaeus morphoC"] <-
-    "Hylaeus conspicuus"
-spec$GenusSpecies[spec$GenusSpecies == "Hylaeus morphoD"] <-
-    "Hylaeus episcopalis"
-spec$GenusSpecies[spec$GenusSpecies == "Triepeolus sp. a"] <-
-    "Triepeolus concavus"
-spec$GenusSpecies[spec$GenusSpecies == "Agapostemon obliquus"] <-
-    "Agapostemon texanus"
+## spec$GenusSpecies[spec$GenusSpecies == "Hylaeus morphoA"] <-
+##     "Hylaeus bisinuatus"
+## spec$GenusSpecies[spec$GenusSpecies == "Hylaeus morphoB"] <-
+##     "Hylaeus calvus"
+## spec$GenusSpecies[spec$GenusSpecies == "Hylaeus morphoC"] <-
+##     "Hylaeus conspicuus"
+## spec$GenusSpecies[spec$GenusSpecies == "Hylaeus morphoD"] <-
+##     "Hylaeus episcopalis"
+## spec$GenusSpecies[spec$GenusSpecies == "Triepeolus sp. a"] <-
+##     "Triepeolus concavus"
+## spec$GenusSpecies[spec$GenusSpecies == "Agapostemon obliquus"] <-
+##     "Agapostemon texanus"
 
 
-unique(spec$GenusSpecies[!spec$GenusSpecies %in% dated.tree$tip.label])
+## unique(spec$GenusSpecies[!spec$GenusSpecies %in% dated.tree$tip.label])
 
-## pruning the tree so tips match
-phylo <-
-    drop.tip(dated.tree, dated.tree$tip.labe[!dated.tree$tip.label %in%
-                                            spec$GenusSpecies])
+## ## pruning the tree so tips match
+## phylo <-
+##     drop.tip(dated.tree, dated.tree$tip.labe[!dated.tree$tip.label %in%
+##                                             spec$GenusSpecies])
 
-co.var.mat  <- ape::vcv.phylo(phylo)
+## co.var.mat  <- ape::vcv.phylo(phylo)
 
-save(co.var.mat, phylo, file="data/covarmatrix_taxon.Rdata")
+## save(co.var.mat, phylo, file="data/covarmatrix_taxon.Rdata")
 
 
 ## **********************************************************************
 ## micheal's tree
 ## **********************************************************************
+
 
 ## load the compiled tree
 dated.tree <- read.tree("/Volumes/bombus/Dropbox (University of Oregon)/sunflower_saved/data/tree/calibees-206t-95p-spruceup-iqtree-swsc-gtrg.tre")
@@ -99,25 +100,27 @@ write.csv(co.var.mat, file=
 ## take the average for species with multiple specimens sequenced
 tips <- unique(colnames(co.var.mat))
 
-out.var <- vector(mode="list", length=length(tips))
+## out.var <- vector(mode="list", length=length(tips))
 
-for(i in 1:length(unique(tips))){
-    print(tips[i])
-    co.var.mat.sub <- co.var.mat[rownames(co.var.mat) == tips[i], ]
-    print(length(co.var.mat.sub))
-    if(length(co.var.mat.sub) != 206){
-        out.var[[i]] <- apply(co.var.mat.sub, 2, mean)
-    } else {
-        out.var[[i]] <- co.var.mat.sub
-    }
-}
+## for(i in 1:length(unique(tips))){
+##     print(tips[i])
+##     co.var.mat.sub <- co.var.mat[rownames(co.var.mat) == tips[i], ]
+##     print(length(co.var.mat.sub))
+##     if(length(co.var.mat.sub) != 206){
+##         out.var[[i]] <- apply(co.var.mat.sub, 2, mean)
+##     } else {
+##         out.var[[i]] <- co.var.mat.sub
+##     }
+## }
 
-out.var2 <- do.call(rbind, out.var)
+## out.var2 <- do.call(rbind, out.var)
 
-rownames(out.var2) <-
-    colnames(out.var2)[!duplicated(colnames(out.var2))]
+## rownames(out.var2) <-
+##     colnames(out.var2)[!duplicated(colnames(out.var2))]
 
-out.var3 <- out.var2[, !duplicated(colnames(out.var2))]
+## out.var3 <- out.var2[, !duplicated(colnames(out.var2))]
+
+out.var3 <- co.var.mat
 
 write.csv(out.var3, file=
                           "/Volumes/bombus/Dropbox (University of Oregon)/sunflower_saved/data/tree/hedgerow_covar_mat_no_dups.csv")
@@ -194,7 +197,9 @@ write.csv(out.var5, file=
 
 co.var.mat <- out.var5
 
-save(co.var.mat, dated.tree, file="data/covarmatrix.Rdata")
+phylo <- dated.tree
+
+save(co.var.mat, phylo, file="data/covarmatrix_community.Rdata")
 
 unique(spec$GenusSpecies[!spec$GenusSpecies %in%
                          rownames(out.var5)])
