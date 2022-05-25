@@ -1,19 +1,18 @@
-## setwd('/Volumes/bombus/Dropbox (University of Oregon)/beeMicrobes')
 
-## this code takes individual-level bee data to see if the composition of microbiome is related to composition of pathobiome
-## uses MRM, an extension of mantel tests, which allows for multiple matrics. We included RBCL and geo to account for diet breadth
-## for 16s, use phylogenetic distances to matrix distance matrix
-## for RBCL, use species taxonomic distances to construct distance matrix
+## this code takes individual-level bee data to see if the composition
+## of microbiome is related to composition of pathobiome uses MRM, an
+## extension of mantel tests, which allows for multiple matrics. We
+## included RBCL and geo to account for diet breadth for 16s, use
+## phylogenetic distances to matrix distance matrix for RBCL, use
+## species taxonomic distances to construct distance matrix
 
-##setwd("~/Dropbox/beeMicrobes")
 rm(list=ls())
 source("src/initialize.R")
-
-## plot comm dist by group,
 source("src/runMRM.R")
 source("src/mod_phylo_funs.R")
 source("src/makeIndivComm.R")
 source("src/commPrep.R")
+source("src/CommDistbyGroup.R")
 
 ## ***************************************************************
 ## 16s
@@ -49,12 +48,15 @@ save(dist.phylo.microbes, dist.microbes,
      file="saved/distmats/indiv_16s.Rdata")
 
 
-group.info <- regmatches(prune.tree.16s$tip.label,regexpr("D\\_4\\_\\_[A-Za-z]+",
+group.info <- regmatches(prune.tree.16s$tip.label,
+                         regexpr("D\\_4\\_\\_[A-Za-z]+",
                                             prune.tree.16s$tip.label))
 group.info <- gsub("D\\_4\\_\\_", "", group.info)
 
-tip.lab <- regmatches(prune.tree.16s$tip.label,regexpr("D\\_5\\_\\_[A-Za-z]+",
-                                            prune.tree.16s$tip.label))
+tip.lab <- regmatches(prune.tree.16s$tip.label,
+                      regexpr("D\\_5\\_\\_[A-Za-z]+",
+                              prune.tree.16s$tip.label))
+
 tip.lab <- gsub("D\\_5\\_\\_", "", tip.lab)
 
 
@@ -82,11 +84,11 @@ p1 <- ggtree(tree.d, aes(color=trait), layout = 'circular',
 
 
 prune.tree.16s <- groupClade(prune.tree.16s, groupInfo)
-ggtree(prune.tree.16s, aes(color=groupInfo), layout='circular') + geom_tiplab(size=1, aes(angle=angle))
+ggtree(prune.tree.16s, aes(color=groupInfo), layout='circular') +
+    geom_tiplab(size=1, aes(angle=angle))
 
-
-
-ggtree(prune.tree.16s, layout='circular') + geom_tiplab(size=1, aes(angle=angle))
+ggtree(prune.tree.16s, layout='circular') +
+    geom_tiplab(size=1, aes(angle=angle))
 
 ##  ****************************************************************
 ## RBCL
@@ -127,6 +129,13 @@ dist.parasite <- as.matrix(vegan::vegdist(parasite.comm,
 
 save(dist.parasite, file="saved/distmats/indiv_parasite.Rdata")
 
+## **********************************************************
+## load mactices from abobr
+## **********************************************************
+load(file="saved/distmats/indiv_parasite.Rdata")
+load(file="saved/distmats/indiv_16s.Rdata")
+load(file="saved/distmats/indiv_rbcl.Rdata")
+
 ##  ****************************************************************
 ## geo and bee commmunities
 ##  ****************************************************************
@@ -142,13 +151,7 @@ bee.comm <- makeCommStruct(spec.wild, "GenusSpecies")
 dist.bee <- as.matrix(vegdist(bee.comm$comm,
                               "gower"))
 
-## **********************************************************
-##  MRMs  multiple regression on distance matrices
-## **********************************************************
-load(file="saved/distmats/indiv_parasite.Rdata")
-load(file="saved/distmats/indiv_16s.Rdata")
-load(file="saved/distmats/indiv_rbcl.Rdata")
-
+##  ****************************************************************
 ## make sure the sites line up
 in.all <- rownames(dist.phylo.microbes)[
     rownames(dist.phylo.microbes) %in% rownames(dist.parasite)]
@@ -200,7 +203,9 @@ MRM(as.dist(dist.parasite) ~  +
 
 ## same result with phylo and rbcl taxon dist matrices
 
+##**********************************************************
 ## plotting
+##**********************************************************
 
 ## combine into one dataset
 all.dists <- data.frame(parasites=dist.parasite[lower.tri(dist.parasite)],
@@ -217,17 +222,24 @@ species <- spec$GenusSpecies[match(rownames(dist.geo), spec$UniqueID)]
 combos.sp <- outer(species, species, FUN=paste)
 all.dists$Species <-  combos.sp[lower.tri(combos.sp)]
 
-par <- ggplot(all.dists, aes(y=parasites,x=microbes)) + geom_point() +
-  ylab("Pathobiome community dissimilarity") +
+
+par <- ggplot(all.dists, aes(y=parasites,x=microbes)) +
+    geom_hex(bins=20) +
+    scale_fill_viridis(name="log(count)", trans="log10")  +
+    theme_minimal()+ ylim(0,1) + xlim(0,1) +
+    ylab("Pathobiome community dissimilarity") +
     xlab("Microbiome dissimilarity")
 
-microbe <- ggplot(all.dists, aes(y=rbcl,x=microbes)) + geom_point() +
-      ylab("Pollen community dissimilarity") +
-    xlab("Microbiome  dissimilarity")
+microbe <- ggplot(all.dists, aes(y=rbcl, x=microbes)) +
+    geom_hex(bins=30) +
+    scale_fill_viridis(name="log(count)", trans="log10")  +
+    theme_minimal()+ ylim(0,1) + xlim(0,1) +
+    ylab("Pollen community dissimilarity") +
+    xlab("Microbiome dissimilarity")
 
 all <- grid.arrange(par, microbe)
 
-ggsave("figures/MRMsIndiv.pdf", all, height=8, width=4)
+ggsave("figures/MRMsIndiv.pdf", all, height=8, width=5)
 
 ## ## **********************************************************
 ## ##  species specific MRMs
@@ -253,3 +265,22 @@ ggsave("figures/MRMsIndiv.pdf", all, height=8, width=4)
 ## save(mrm.16sPhylo.by.sp, mrm.16s.by.sp,
 ##      file="saved/distmats/mrm16sPhylo.Rdata")
 
+##**********************************************************
+## Genus pcoas
+##**********************************************************
+
+genera  <- spec$Genus[match(rownames(dist.phylo.microbes),
+                 spec$UniqueID)]
+
+gensp  <- spec$GenusSpecies[match(rownames(dist.phylo.microbes),
+                 spec$UniqueID)]
+
+plotCommDistbyGroup(dist.mat =dist.phylo.microbes,
+                    groups=genera,
+                    species.type="16s",
+                    group.name = "genera")
+
+plotCommDistbyGroup(dist.mat =dist.phylo.microbes,
+                    groups=gensp,
+                    species.type="16s",
+                    group.name = "species")

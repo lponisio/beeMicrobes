@@ -1,5 +1,3 @@
-## setwd('/Volumes/bombus/Dropbox (University of Oregon)/beeMicrobes')
-
 ## Bee trait distinctness and diet breadth may drive microbiome and
 ## pathobiome dynamics We build formulas for the following response
 ## variables: microbiome distincess, microbiome diversity, parasite
@@ -15,12 +13,20 @@
 rm(list=ls())
 source("src/init_bayes.R")
 load('data/allNetSums.RData')
+load('data/covarmatrix_community.RData')
 
+bee.fams <- c("Apidae", "Halictidae", "Megachilidae")
+
+all.indiv.mets <- all.indiv.mets[all.indiv.mets$Family %in% bee.fams,]
+
+## *************************************************************
 ## change to the number of cores you would like to run on
-
-ncores <- 2
+ncores <- 10
+## *************************************************************
 
 all.indiv.mets$PossibleParasite <- 5
+
+all.indiv.mets$GenusSpecies2 <- all.indiv.mets$GenusSpecies
 
 yvars <- c("Parasite_originality",
            "ParasiteRichness | vint(PossibleParasite)",
@@ -29,7 +35,8 @@ yvars <- c("Parasite_originality",
 
 xvars <-      c("scale(RBCL_degree)",
                 "scale(originality)", "scale(r.degree)",
-                "(1|GenusSpecies)", "(1|Genus)", "(1|Site)")
+                "(1|gr(GenusSpecies, cov = co.var.mat))",
+                "(1|Site)", "(1|GenusSpecies2)")
 
 x.form <- paste(paste(xvars,  collapse="+"))
 
@@ -39,9 +46,15 @@ func.formulas <-lapply(yvars, function(y) {
 
 names(func.formulas) <- yvars
 
+all.indiv.mets <- all.indiv.mets[all.indiv.mets$GenusSpecies %in%
+                                 rownames(co.var.mat),]
+
 ## parasite originality
-mod.par.orig  <- brm(func.formulas[[1]],  data = all.indiv.mets,
+mod.par.orig  <- brm(func.formulas[[1]],
+                     data = all.indiv.mets,
+                     data2 = list(co.var.mat = co.var.mat),
                      cores=ncores,
+                     family = gaussian(),
                      iter = 10^5,
                      chains = 3,
                      inits=0,
@@ -49,9 +62,8 @@ mod.par.orig  <- brm(func.formulas[[1]],  data = all.indiv.mets,
 
 save(mod.par.orig,
      file="saved/parasiteOrigFit.Rdata")
-mcmc_trace(mod.par.orig)
-ggsave("figures/diagnostics/parOrigBayesDiag.pdf",
-       height=11, width=8.5)
+phyloHyp(mod.par.orig, "parOrig")
+
 write.ms.table(mod.par.orig, "parOrig")
 
 
@@ -76,7 +88,8 @@ stanvars <- stanvar(scode = stan_funs, block = "functions")
 mod.par.div  <- brm(func.formulas[[2]],
                     family = beta_binomial2, stanvars = stanvars,
                     data = all.indiv.mets,
-                    cores=ncores,
+                    data2 = list(co.var.mat = co.var.mat),
+                    cores=1,
                     iter = 10^5,
                     chains = 3,
                     inits=0,
@@ -84,14 +97,14 @@ mod.par.div  <- brm(func.formulas[[2]],
 
 save(mod.par.div,
      file="saved/parasiteDivFit.Rdata")
-mcmc_trace(mod.par.div)
-ggsave("figures/diagnostics/parDivBayesDiag.pdf",
-       height=11, width=8.5)
+phyloHyp(mod.par.div, "parDiv",  mod.gaussian=FALSE)
+
 write.ms.table(mod.par.div, "parDiv")
 
 ### micro originality
 mod.micro.orig  <- brm(func.formulas[[3]],  data = all.indiv.mets,
                        cores=ncores,
+                       data2 = list(co.var.mat = co.var.mat),
                        iter = 10^5,
                        chains = 3,
                        inits=0,
@@ -99,14 +112,14 @@ mod.micro.orig  <- brm(func.formulas[[3]],  data = all.indiv.mets,
 
 save(mod.micro.orig,
      file="saved/microbeOrigFit.Rdata")
-mcmc_trace(mod.micro.orig)
-ggsave("figures/diagnostics/microOrigBayesDiag.pdf",
-       height=11, width=8.5)
+phyloHyp(mod.micro.orig, "microOrig")
+
 write.ms.table(mod.micro.orig, "microOrig")
 
 ## micro diversity
 mod.micro.div  <- brm(func.formulas[[3]],  data = all.indiv.mets,
                       cores=ncores,
+                      data2 = list(co.var.mat = co.var.mat),
                       iter = 10^5,
                       chains = 3,
                       inits=0,
@@ -114,10 +127,7 @@ mod.micro.div  <- brm(func.formulas[[3]],  data = all.indiv.mets,
 
 save(mod.micro.div,
      file="saved/microbeDivFit.Rdata")
-mcmc_trace(mod.micro.div)
-ggsave("figures/diagnostics/microDivBayesDiag.pdf",
-       height=11, width=8.5)
-write.ms.table(mod.micro.div, "micrDiv")
-save(mod.micro.div,
-     file="saved/microbeDivFit.Rdata")
+phyloHyp(mod.micro.div, "microDiv",  mod.gaussian=FALSE)
+
+write.ms.table(mod.micro.div, "microDiv")
 
