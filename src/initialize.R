@@ -6,19 +6,10 @@ library(ecodist)
 library(fields)
 library(picante)
 library(gridExtra)
-
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-
-BiocManager::install("ggtree")
-
-
 library(ggplot2)
-library(ggtree)
 
 load('data/spec_RBCL_16s.Rdata')
 
-source("src/misc.R")
 
 parasites <- c("Apicystis", "Ascosphaera", "CrithidiaSpp",
                "CrithidiaBombi", "CrithidiaExpoeki",
@@ -36,7 +27,7 @@ load('data/trees.Rdata')
 
 dir.create("figures", showWarnings = FALSE)
 dir.create("figures/diagnostics", showWarnings = FALSE)
-dir.create("figures/mods", showWarnings = FALSE)
 dir.create("saved/tables", showWarnings = FALSE)
 dir.create("saved/distmats", showWarnings = FALSE)
 
+source("src/misc.R")

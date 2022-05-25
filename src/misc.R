@@ -24,3 +24,24 @@ samp2site.spp <- function(site, spp, abund, FUN=sum) {
   return(x)
 }
 
+
+
+phyloHyp <- function(mod, mod.name, mod.gaussian=TRUE){
+
+    ## plot(mod, N = 4, ask = FALSE)
+    ## ggsave(sprintf("figures/diagnostics/%s_Diag.pdf", mod.name),
+    ##        height=11, width=8.5)
+
+    pdf(sprintf("figures/diagnostics/%s_Diag.pdf", mod.name),
+        height=11, width=8.5)
+    plot(mod,  N = 4, ask = FALSE)
+    dev.off()
+
+    if(mod.gaussian){
+        hyp <- "sd_GenusSpecies__Intercept^2 / (sd_GenusSpecies__Intercept^2 + sd_GenusSpecies2__Intercept^2 + sigma^2) = 0"
+        hyp <- hypothesis(mod, hyp, class = NULL)
+        plot(hyp, main="Phylogenetic signal")
+        ggsave(sprintf("figures/diagnostics/phyloInt_%s.pdf", mod.name),
+               height=4, width=4)
+    }
+}
