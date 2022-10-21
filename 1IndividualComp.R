@@ -130,7 +130,7 @@ dist.parasite <- as.matrix(vegan::vegdist(parasite.comm,
 save(dist.parasite, file="saved/distmats/indiv_parasite.Rdata")
 
 ## **********************************************************
-## load mactices from abobr
+## load dist matrices
 ## **********************************************************
 load(file="saved/distmats/indiv_parasite.Rdata")
 load(file="saved/distmats/indiv_16s.Rdata")

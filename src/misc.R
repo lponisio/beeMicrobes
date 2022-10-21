@@ -45,3 +45,44 @@ phyloHyp <- function(mod, mod.name, mod.gaussian=TRUE){
                height=4, width=4)
     }
 }
+
+shared_legend <- function(...,
+                          ncol = length(list(...)),
+                          nrow = 1,
+                          position = c("bottom",
+                                       "right", "top", "left"),
+                          plot = TRUE){
+    ## shared legend across plots, modified from lemon package
+    plots <- list(...)
+    position <- match.arg(position)
+    legend <- g_legend(plots[[1]] + theme(legend.position = position,
+                                          legend.text =
+                                              element_text(size=6),
+                                          legend.key.size = unit(3, "point"),
+                                          legend.title=element_blank()))
+    lheight <- sum(legend$height)
+    lwidth <- sum(legend$width)
+    gl <- lapply(plots, function(x) {
+        if (is.ggplot(x)) {
+            x + theme(legend.position = "none")
+        }
+        else {
+            x
+        }
+    })
+    gl <- c(gl, ncol = ncol, nrow = nrow)
+    combined <- switch(position, top = arrangeGrob(legend, do.call(arrangeGrob,
+        gl), ncol = 1, heights = grid::unit.c(lheight, unit(1, "npc") -
+        lheight)), bottom = arrangeGrob(do.call(arrangeGrob,
+        gl), legend, ncol = 1, heights = grid::unit.c(unit(1, "npc") -
+        lheight, lheight)), left = arrangeGrob(legend, do.call(arrangeGrob,
+        gl), ncol = 2, widths = grid::unit.c(lwidth, unit(1, "npc") -
+        lwidth)), right = arrangeGrob(do.call(arrangeGrob, gl),
+        legend, ncol = 2, widths = grid::unit.c(unit(1, "npc") - lwidth,
+            lwidth)))
+    if (plot) {
+        grid::grid.newpage()
+        grid::grid.draw(combined)
+    }
+    invisible(combined)
+}

@@ -6,7 +6,7 @@ library(brms)
 library(bayesplot)
 library(tidybayes)
 library(ggplot2)
-library(tidyverse)
+library(dplyr)
 library(performance)
 
 library(ape)

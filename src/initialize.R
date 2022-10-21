@@ -7,6 +7,7 @@ library(fields)
 library(picante)
 library(gridExtra)
 library(ggplot2)
+library(ggtree)
 
 load('data/spec_RBCL_16s.Rdata')
 
