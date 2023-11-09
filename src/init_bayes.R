@@ -8,6 +8,7 @@ library(tidybayes)
 library(ggplot2)
 library(dplyr)
 library(performance)
+library(bayestestR)
 
 library(ape)
 

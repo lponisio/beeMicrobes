@@ -31,6 +31,27 @@ sp.means <- all.indiv.mets  %>%
                                          na.rm=TRUE),
               )
 
+###########################################################################
+## density plots
+###########################################################################
+
+sp.counts <- table(all.indiv.mets$GenusSpecies)
+sp.over.2 <- names(sp.counts)[sp.counts > 2]
+all.sp.sub <- all.indiv.mets[all.indiv.mets$GenusSpecies %in% sp.over.2,]
+all.sp.sub <- all.sp.sub[!is.na(all.sp.sub$Parasite_originality),]
+
+labels <- all.sp.sub %>% 
+  group_by(GenusSpecies) %>%  
+  summarise(xPos = mean(Parasite_originality, na.rm=TRUE),
+            yPos = max((density(Parasite_originality))$y))
+
+ggplot() + 
+  geom_density(data=all.sp.sub,
+               aes(x = Parasite_originality, group = GenusSpecies, colour=GenusSpecies)) +
+  geom_label(data=labels, aes(x=xPos, y=yPos, colour=GenusSpecies, label=GenusSpecies)) +
+  theme_light() +
+  theme(legend.position = "None")
+
 
 ###########################################################################
 ## parasite distinctness
