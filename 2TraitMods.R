@@ -93,15 +93,15 @@ mod.set4 <- makeforms(xvars.traits4, yvars)
 all.indiv.mets <- all.indiv.mets[all.indiv.mets$GenusSpecies %in%
                                  rownames(co.var.mat),]
 
-## parasite originality
-
+## function for running brms models with different xvar sets and y variables
 runmodels <- function(mod.set, yvar,
                       indiv.mets,
                       phylo.mat,
                       runcores=ncores,
                       niter=10^4,
                       nchains=1,
-                      name.file="set1"){
+                      name.file="set1",
+                      mod.gaussian=TRUE){
   
   fit  <- brm(mod.set[[yvar]],
               data = indiv.mets,
@@ -122,17 +122,19 @@ runmodels <- function(mod.set, yvar,
   write.ms.table(fit, sprintf("%s_%s", yvar, name.file))
 
   ## phylogenic signal
-  phyloHyp(fit, sprintf("%s_%s", yvar, name.file))
+  phyloHyp(fit, sprintf("%s_%s", yvar, name.file), mod.gaussian=mod.gaussian)
 
   return(list(fit=fit, br2=br2, loor2=loor2))
 }
 
 
+## ************************************************************************
+## parasite originality
+## ************************************************************************
 par.orig.set1 <- runmodels(mod.set=mod.set1, yvar=yvars[1],
                            indiv.mets=all.indiv.mets,
                            phylo.mat=co.var.mat,
                            name.file="set1")
-
 ## posterior prdictive checks
 plot(pp_check(par.orig.set1$fit, ndraws=100))
 
@@ -158,18 +160,63 @@ par.orig.set4 <- runmodels(mod.set=mod.set4, yvar=yvars[1],
 ## posterior prdictive checks
 plot(pp_check(par.orig.set4$fit, ndraws=100))
 
-
+## model selection
 waic(par.orig.set1$fit,
      par.orig.set2$fit, par.orig.set3$fit, par.orig.set4$fit) 
-
 
 loo(par.orig.set1$fit,
      par.orig.set2$fit, par.orig.set3$fit, par.orig.set4$fit) 
 
+## asses r2s
+par.orig.set1$br2
+par.orig.set2$br2
+par.orig.set3$br2
+par.orig.set4$br2
 
-par.orig.set1$fit
-par.orig.set2$fit
-par.orig.set3$fit par.orig.set4$fi
+## ************************************************************************
+## microbe originality
+## ************************************************************************
+micro.orig.set1 <- runmodels(mod.set=mod.set1, yvar=yvars[3],
+                           indiv.mets=all.indiv.mets,
+                           phylo.mat=co.var.mat,
+                           name.file="set1")
+
+## posterior prdictive checks
+plot(pp_check(micro.orig.set1$fit, ndraws=100))
+
+micro.orig.set2 <- runmodels(mod.set=mod.set2, yvar=yvars[3],
+                           indiv.mets=all.indiv.mets,
+                           phylo.mat=co.var.mat,
+                           name.file="set2")
+## posterior prdictive checks
+plot(pp_check(micro.orig.set2$fit, ndraws=100))
+
+micro.orig.set3 <- runmodels(mod.set=mod.set3, yvar=yvars[3],
+                           indiv.mets=all.indiv.mets,
+                           phylo.mat=co.var.mat,
+                           name.file="set3")
+## posterior prdictive checks
+plot(pp_check(micro.orig.set3$fit, ndraws=100))
+
+micro.orig.set4 <- runmodels(mod.set=mod.set4, yvar=yvars[3],
+                           indiv.mets=all.indiv.mets,
+                           phylo.mat=co.var.mat,
+                           name.file="set4")
+## posterior prdictive checks
+plot(pp_check(micro.orig.set4$fit, ndraws=100))
+
+## model selection
+waic(micro.orig.set1$fit,
+     micro.orig.set2$fit, micro.orig.set3$fit, micro.orig.set4$fit) 
+
+loo(micro.orig.set1$fit,
+     micro.orig.set2$fit, micro.orig.set3$fit, micro.orig.set4$fit) 
+
+## assess r2s
+micro.orig.set1$br2
+micro.orig.set2$br2
+micro.orig.set3$br2
+micro.orig.set4$br2
 
 ## ************************************************************************
 ## parasite richness
@@ -191,49 +238,100 @@ stan_funs <- "
 "
 stanvars <- stanvar(scode = stan_funs, block = "functions")
 
-mod.par.div  <- brm(func.formulas[[2]],
-                    family = beta_binomial2, stanvars = stanvars,
-                    data = all.indiv.mets,
-                    data2 = list(co.var.mat = co.var.mat),
-                    cores=1,
-                    iter = 10^5,
-                    chains = 3,
-                    inits=0,
-                    control = list(adapt_delta = 0.99))
+par.div.set1 <- runmodels(mod.set=mod.set1, yvar=yvars[2],
+                          indiv.mets=all.indiv.mets,
+                          phylo.mat=co.var.mat,
+                          name.file="set1",
+                          mod.gaussian=FALSE)
 
-save(mod.par.div,
-     file="saved/parasiteDivFit.Rdata")
-phyloHyp(mod.par.div, "parDiv",  mod.gaussian=FALSE)
+## posterior prdictive checks
+plot(pp_check(par.div.set1$fit, ndraws=100))
 
-write.ms.table(mod.par.div, "parDiv")
 
-### micro originality
-mod.micro.orig  <- brm(func.formulas[[3]],  data = all.indiv.mets,
-                       cores=ncores,
-                       data2 = list(co.var.mat = co.var.mat),
-                       iter = 10^5,
-                       chains = 3,
-                       inits=0,
-                       control = list(adapt_delta = 0.99))
+par.div.set2 <- runmodels(mod.set=mod.set2, yvar=yvars[2],
+                          indiv.mets=all.indiv.mets,
+                          phylo.mat=co.var.mat,
+                          name.file="set2",
+                          mod.gaussian=FALSE)
+## posterior prdictive checks
+plot(pp_check(par.div.set2$fit, ndraws=100))
 
-save(mod.micro.orig,
-     file="saved/microbeOrigFit.Rdata")
-phyloHyp(mod.micro.orig, "microOrig")
+par.div.set3 <- runmodels(mod.set=mod.set3, yvar=yvars[2],
+                          indiv.mets=all.indiv.mets,
+                          phylo.mat=co.var.mat,
+                          name.file="set3",
+                          mod.gaussian=FALSE)
+## posterior prdictive checks
+plot(pp_check(par.div.set3$fit, ndraws=100))
 
-write.ms.table(mod.micro.orig, "microOrig")
+par.div.set4 <- runmodels(mod.set=mod.set4, yvar=yvars[2],
+                          indiv.mets=all.indiv.mets,
+                          phylo.mat=co.var.mat,
+                          name.file="set4",
+                          mod.gaussian=FALSE)
+## posterior prdictive checks
+plot(pp_check(par.div.set4$fit, ndraws=100))
 
-## micro diversity
-mod.micro.div  <- brm(func.formulas[[3]],  data = all.indiv.mets,
-                      cores=ncores,
-                      data2 = list(co.var.mat = co.var.mat),
-                      iter = 10^5,
-                      chains = 3,
-                      inits=0,
-                      control = list(adapt_delta = 0.99))
+## model selection
+waic(par.div.set1$fit,
+     par.div.set2$fit, par.div.set3$fit, par.div.set4$fit) 
 
-save(mod.micro.div,
-     file="saved/microbeDivFit.Rdata")
-phyloHyp(mod.micro.div, "microDiv",  mod.gaussian=FALSE)
+loo(par.div.set1$fit,
+     par.div.set2$fit, par.div.set3$fit, par.div.set4$fit) 
 
-write.ms.table(mod.micro.div, "microDiv")
+## assess r2s
+par.div.set1$br2
+par.div.set2$br2
+par.div.set3$br2
+par.div.set4$br2
 
+## ************************************************************************
+## microbe diversity
+## ************************************************************************
+
+micro.div.set1 <- runmodels(mod.set=mod.set1, yvar=yvars[4],
+                          indiv.mets=all.indiv.mets,
+                          phylo.mat=co.var.mat,
+                          name.file="set1",
+                          mod.gaussian=FALSE)
+
+## posterior prdictive checks
+plot(pp_check(micro.div.set1$fit, ndraws=100))
+
+
+micro.div.set2 <- runmodels(mod.set=mod.set2, yvar=yvars[4],
+                          indiv.mets=all.indiv.mets,
+                          phylo.mat=co.var.mat,
+                          name.file="set2",
+                          mod.gaussian=FALSE)
+## posterior prdictive checks
+plot(pp_check(micro.div.set2$fit, ndraws=100))
+
+micro.div.set3 <- runmodels(mod.set=mod.set3, yvar=yvars[4],
+                          indiv.mets=all.indiv.mets,
+                          phylo.mat=co.var.mat,
+                          name.file="set3",
+                          mod.gaussian=FALSE)
+## posterior prdictive checks
+plot(pp_check(micro.div.set3$fit, ndraws=100))
+
+micro.div.set4 <- runmodels(mod.set=mod.set4, yvar=yvars[4],
+                          indiv.mets=all.indiv.mets,
+                          phylo.mat=co.var.mat,
+                          name.file="set4",
+                          mod.gaussian=FALSE)
+## posterior prdictive checks
+plot(pp_check(micro.div.set4$fit, ndraws=100))
+
+## model selection
+waic(micro.div.set1$fit,
+     micro.div.set2$fit, micro.div.set3$fit, micro.div.set4$fit) 
+
+loo(micro.div.set1$fit,
+     micro.div.set2$fit, micro.div.set3$fit, micro.div.set4$fit) 
+
+## assess r2s
+micro.div.set1$br2
+micro.div.set2$br2
+micro.div.set3$br2
+micro.div.set4$br2
