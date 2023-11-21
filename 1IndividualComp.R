@@ -13,6 +13,7 @@ source("src/mod_phylo_funs.R")
 source("src/makeIndivComm.R")
 source("src/commPrep.R")
 source("src/CommDistbyGroup.R")
+load('data/covarmatrix_community.Rdata')
 
 ## ***************************************************************
 ## 16s
@@ -165,9 +166,11 @@ dist.phylo.microbes <- dist.phylo.microbes[in.all, in.all]
 dist.geo <- dist.geo[in.all, in.all]
 
 sites.all <- spec$Site[match(in.all, spec$UniqueID)]
+genusspecies.all <- spec$GenusSpecies[match(in.all, spec$UniqueID)]
 
 dist.bee <- dist.bee[sites.all, sites.all]
 
+dist.bee.phylo <- dist.bee[sites.all, sites.all]
 ## **********************************************************
 ## 16s phylo vs. parasite, rbcl species dissimilarity,
 
