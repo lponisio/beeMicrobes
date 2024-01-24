@@ -18,6 +18,11 @@ load('data/covarmatrix_community.RData')
 all.indiv.mets$Family[all.indiv.mets$Genus == "Hylaeus"] <- "Colletidae"
 bee.fams <- c("Apidae", "Halictidae", "Megachilidae", "Colletidae")
 all.indiv.mets <- all.indiv.mets[all.indiv.mets$Family %in% bee.fams,]
+
+all.indiv.mets$Apis <- "not Apis"
+all.indiv.mets$Apis[all.indiv.mets$Genus == "Apis"] <-
+  "Apis"
+
 all.indiv.mets$PossibleParasite <- 5
 all.indiv.mets$GenusSpecies2 <- all.indiv.mets$GenusSpecies
 all.indiv.mets$onSF <- all.indiv.mets$PlantGenusSpecies
@@ -28,6 +33,11 @@ all.indiv.mets$Nest <- paste(all.indiv.mets$NestPartitions,
 all.indiv.mets <- all.indiv.mets[all.indiv.mets$GenusSpecies %in%
                                  rownames(co.var.mat),]
 
+all.indiv.mets$Parasite_originality <-
+  all.indiv.mets$Parasite_originality^(1/3)
+all.indiv.mets$Micro_originality <-
+  all.indiv.mets$Micro_originality^(1/3)
+
 ## change to the number of cores you would like to run on
 ncores <- 1
 
@@ -35,7 +45,7 @@ ncores <- 1
 ## set up response and explanatory variable sets
 ## *************************************************************
 yvars <- c("Parasite_originality",
-           "ParasiteRichness | vint(PossibleParasite)",
+           "ParasiteRichness | trials(PossibleParasite)",
            "Micro_originality",
            "Micro_partner.diversity")
 
@@ -64,7 +74,7 @@ xvars.traits3 <-      c("scale(RBCL_degree)",
 
 xvars.traits4 <-      c("scale(RBCL_degree)",
                        "scale(r.degree)",
-                       "Nest",
+                       "NestLoc",
                        "onSF",
                        "(1|gr(GenusSpecies, cov = co.var.mat))",
                        "(1|Site)")
@@ -73,6 +83,12 @@ xvars.5 <-      c("Genus",
                    "onSF",
                        "(1|gr(GenusSpecies, cov = co.var.mat))",
                        "(1|Site)")
+
+xvars.6 <-      c("Apis",
+                  "onSF",
+                  "(1|gr(GenusSpecies, cov = co.var.mat))",
+                  "(1|Site)")
+
 
 makeforms <- function(xvars, yvars){
   x.form <- paste(paste(xvars,  collapse="+"))
@@ -89,6 +105,7 @@ mod.set2 <- makeforms(xvars.traits2, yvars)
 mod.set3 <- makeforms(xvars.traits3, yvars)
 mod.set4 <- makeforms(xvars.traits4, yvars)
 mod.set5 <- makeforms(xvars.5, yvars)
+mod.set6 <- makeforms(xvars.6, yvars)
 
 sub.indiv.mets <- all.indiv.mets[!is.na(all.indiv.mets$r.degree) &
                                  !is.na(all.indiv.mets$RBCL_degree),]
@@ -102,13 +119,14 @@ runmodels <- function(mod.set, yvar,
                       indiv.mets,
                       phylo.mat,
                       runcores=ncores,
-                      niter=10^4,
+                      niter=10^3,
                       nchains=1,
                       name.file="set1",
                       mod.gaussian=TRUE,
                       family=gaussian(),
+                      calcr2 = TRUE,
                       ...){
-  
+
   fit  <- brm(mod.set[[yvar]],
               data = indiv.mets,
               data2 = list(co.var.mat = phylo.mat),
@@ -121,7 +139,7 @@ runmodels <- function(mod.set, yvar,
                              max_treedepth = 11),
               ...)
   ## r2
-  if(family != binomial2){
+  if(calcr2){
     br2 <- bayes_R2(fit)
     loor2 <- loo_R2(fit)
   } else{
@@ -135,7 +153,8 @@ runmodels <- function(mod.set, yvar,
   write.ms.table(fit, sprintf("%s_%s", yvar, name.file))
 
   ## phylogenic signal
-  phyloHyp(fit, sprintf("%s_%s", yvar, name.file), mod.gaussian=mod.gaussian)
+  try(phyloHyp(fit, sprintf("%s_%s", yvar, name.file),
+           mod.gaussian=mod.gaussian), silent=TRUE)
 
   return(list(fit=fit, br2=br2, loor2=loor2))
 }
@@ -144,13 +163,49 @@ runmodels <- function(mod.set, yvar,
 ## parasite originality
 ## ************************************************************************
 
-par.orig.set1 <- runmodels(mod.set=mod.set1, yvar=yvars[1],
-                           indiv.mets=sub.indiv.mets,
-                           phylo.mat=co.var.mat,
-                           name.file="set1",
-                           family=student())
-## posterior prdictive checks
-plot(pp_check(par.orig.set1$fit, ndraws=100))
+all.model.sets <- list(mod.set1, mod.set2, mod.set3,
+                       mod.set4, mod.set5, mod.set6)
+names(all.model.sets) <- paste0("set", 1:6)
+
+runAllModels <- function(yvar.index, family.fun = student(),
+                         all.model.sets, save.path="saved/mod-comparisons"){  
+  model.sets <- lapply(names(all.model.sets), function(this.set){
+    runmodels(mod.set=all.model.sets[[this.set]],
+              yvar=yvars[yvar.index],
+              indiv.mets=sub.indiv.mets,
+              phylo.mat=co.var.mat,
+              name.file=this.set,
+              family=family.fun)
+
+  })
+  save(model.sets, file=file.path(save.path, sprintf("%s.Rdata",
+                                                     yvars[yvar.index])))
+}
+
+par.orig.models <- runAllModels(yvar.index=1, family.fun = gaussian(),
+                                all.model.sets=all.model.sets)
+
+micro.orig.models <- runAllModels(yvar.index=3, family.fun = gaussian(),
+                                  all.model.sets=all.model.sets)
+
+par.div.models <- runAllModels(yvar.index=2, family.fun = beta_binomial(),
+                               all.model.sets=all.model.sets)
+
+micro.div.models <- runAllModels(yvar.index=4, family.fun = gaussian(),
+                                 all.model.sets=all.model.sets)
+
+
+
+
+
+
+  par.orig.set1 <- runmodels(mod.set=mod.set1, yvar=yvars[1],
+                             indiv.mets=sub.indiv.mets,
+                             phylo.mat=co.var.mat,
+                             name.file="set1",
+                             family=student())
+  ## posterior prdictive checks
+  plot(pp_check(par.orig.set1$fit, ndraws=100))
 
 par.orig.set2 <- runmodels(mod.set=mod.set2, yvar=yvars[1],
                            indiv.mets=sub.indiv.mets,
@@ -185,15 +240,34 @@ par.orig.set5 <- runmodels(mod.set=mod.set5, yvar=yvars[1],
 plot(pp_check(par.orig.set5$fit, ndraws=100))
 
 
+par.orig.set6 <- runmodels(mod.set=mod.set6, yvar=yvars[1],
+                           indiv.mets=sub.indiv.mets,
+                           phylo.mat=co.var.mat,
+                           name.file="set6",
+                           family=student())
+## posterior prdictive checks
+plot(pp_check(par.orig.set6$fit, ndraws=100))
+
+
+save(par.orig.set1,
+     par.orig.set2,
+     par.orig.set3,
+     par.orig.set4,
+     par.orig.set5,
+     par.orig.set6,
+     file="saved/mod-comparisons/par_orig.Rdata")
+
+load(file="saved/mod-comparisons/par_orig.Rdata")
+
 ## model selection
 par.orig.waic <- waic(par.orig.set1$fit,
      par.orig.set2$fit, par.orig.set3$fit, par.orig.set4$fit,
-     par.orig.set5$fit)
+     par.orig.set5$fit, par.orig.set6$fit)
 par.orig.waic
 
 par.orig.loo <- loo(par.orig.set1$fit,
      par.orig.set2$fit, par.orig.set3$fit, par.orig.set4$fit,
-    par.orig.set5$fit)
+    par.orig.set5$fit, par.orig.set6$fit)
 par.orig.loo
 
 ## expected log predictive density (elpd_loo)
@@ -206,6 +280,7 @@ par.orig.set2$br2
 par.orig.set3$br2
 par.orig.set4$br2
 par.orig.set5$br2
+par.orig.set6$br2
 
 save(par.orig.waic,
      par.orig.loo,
@@ -214,7 +289,12 @@ save(par.orig.waic,
      par.orig.set3,
      par.orig.set4,
      par.orig.set5,
+     par.orig.set6,
      file="saved/mod-comparisons/par_orig.Rdata")
+
+
+## lowests waic and loo is mod set 6, the nest lowest is 3 (diff 1.1,
+## se 1.1) and 4 (diff 1.3, se 1.3)
 
 ## ************************************************************************
 ## microbe originality
@@ -224,53 +304,73 @@ micro.orig.set1 <- runmodels(mod.set=mod.set1, yvar=yvars[3],
                            indiv.mets=sub.indiv.mets,
                            phylo.mat=co.var.mat,
                            name.file="set1",
-                           family=student())
+                           family=gaussian())
 
-## posterior prdictive checks
+## posterior predictive checks
 plot(pp_check(micro.orig.set1$fit, ndraws=100))
 
 micro.orig.set2 <- runmodels(mod.set=mod.set2, yvar=yvars[3],
                            indiv.mets=sub.indiv.mets,
                            phylo.mat=co.var.mat,
                            name.file="set2",
-                           family=student())
-## posterior prdictive checks
+                           family=gaussian())
+## posterior predictive checks
 plot(pp_check(micro.orig.set2$fit, ndraws=100))
 
 micro.orig.set3 <- runmodels(mod.set=mod.set3, yvar=yvars[3],
                            indiv.mets=sub.indiv.mets,
                            phylo.mat=co.var.mat,
                            name.file="set3",
-                           family=student())
-## posterior prdictive checks
+                           family=gaussian())
+## posterior predictive checks
 plot(pp_check(micro.orig.set3$fit, ndraws=100))
 
 micro.orig.set4 <- runmodels(mod.set=mod.set4, yvar=yvars[3],
                            indiv.mets=sub.indiv.mets,
                            phylo.mat=co.var.mat,
                            name.file="set4",
-                           family=student())
-## posterior prdictive checks
+                           family=gaussian())
+## posterior predictive checks
 plot(pp_check(micro.orig.set4$fit, ndraws=100))
 
 micro.orig.set5 <- runmodels(mod.set=mod.set5, yvar=yvars[3],
                            indiv.mets=sub.indiv.mets,
                            phylo.mat=co.var.mat,
                            name.file="set5",
-                           family=student())
-## posterior prdictive checks
+                           family=gaussian())
+## posterior predictive checks
 plot(pp_check(micro.orig.set5$fit, ndraws=100))
 
+
+
+micro.orig.set6 <- runmodels(mod.set=mod.set6, yvar=yvars[3],
+                           indiv.mets=sub.indiv.mets,
+                           phylo.mat=co.var.mat,
+                           name.file="set5",
+                           family=gaussian())
+## posterior predictive checks
+plot(pp_check(micro.orig.set6$fit, ndraws=100))
+
+
+save(micro.orig.set1,
+     micro.orig.set2,
+     micro.orig.set3,
+     micro.orig.set4,
+     micro.orig.set5,
+     micro.orig.set6,
+     file="saved/mod-comparisons/micro_orig.Rdata")
+
+load(file="saved/mod-comparisons/micro_orig.Rdata")
 
 ## model selection
 micro.orig.waic <- waic(micro.orig.set1$fit,
      micro.orig.set2$fit, micro.orig.set3$fit, micro.orig.set4$fit,
-     micro.orig.set5$fit) 
+     micro.orig.set5$fit, micro.orig.set6$fit) 
 micro.orig.waic
 
 micro.orig.loo <- loo(micro.orig.set1$fit,
      micro.orig.set2$fit, micro.orig.set3$fit, micro.orig.set4$fit,
-    micro.orig.set5$fit)
+    micro.orig.set5$fit, micro.orig.set6$fit)
 micro.orig.loo
 
 ## assess r2s
@@ -279,6 +379,7 @@ micro.orig.set2$br2
 micro.orig.set3$br2
 micro.orig.set4$br2
 micro.orig.set5$br2
+micro.orig.set6$br2
 
 save(micro.orig.waic,
      micro.orig.loo,
@@ -287,37 +388,26 @@ save(micro.orig.waic,
      micro.orig.set3,
      micro.orig.set4,
      micro.orig.set5,
+     micro.orig.set6,
      file="saved/mod-comparisons/micro_orig.Rdata")
+
+## model set 1/3 is best fit, model set 2 are next with a elpd_diff of
+## 0.1 and an SE larger than the diff of 0.7, so model set 3/2 is not
+## distinguishable from 1. Model set 1,2,3 are therefore the top
+## models.
 
 ## ************************************************************************
 ## parasite richness
 ## ************************************************************************
-
-beta_binomial2 <- custom_family(
-  "beta_binomial2", dpars = c("mu", "phi"),
-  links = c("logit", "log"), lb = c(NA, 0),
-  type = "int", vars = "vint1[n]"
-)
-
-stan_funs <- "
-  real beta_binomial2_lpmf(int y, real mu, real phi, int T) {
-    return beta_binomial_lpmf(y | T, mu * phi, (1 - mu) * phi);
-  }
-  int beta_binomial2_rng(real mu, real phi, int T) {
-    return beta_binomial_rng(T, mu * phi, (1 - mu) * phi);
-  }
-"
-stanvars <- stanvar(scode = stan_funs, block = "functions")
 
 par.div.set1 <- runmodels(mod.set=mod.set1, yvar=yvars[2],
                           indiv.mets=sub.indiv.mets,
                           phylo.mat=co.var.mat,
                           name.file="set1",
                           mod.gaussian=FALSE,
-                          family=beta_binomial2,
-                         stanvars = stanvars)
+                          family=beta_binomial())
 
-## posterior prdictive checks
+## posterior predictive checks
 plot(pp_check(par.div.set1$fit, ndraws=100))
 
 
@@ -326,9 +416,9 @@ par.div.set2 <- runmodels(mod.set=mod.set2, yvar=yvars[2],
                           phylo.mat=co.var.mat,
                           name.file="set2",
                           mod.gaussian=FALSE,
-                           family=beta_binomial2,
-                         stanvars = stanvars)
-## posterior prdictive checks
+                           family=beta_binomial())
+
+## posterior predictive checks
 plot(pp_check(par.div.set2$fit, ndraws=100))
 
 par.div.set3 <- runmodels(mod.set=mod.set3, yvar=yvars[2],
@@ -336,9 +426,9 @@ par.div.set3 <- runmodels(mod.set=mod.set3, yvar=yvars[2],
                           phylo.mat=co.var.mat,
                           name.file="set3",
                           mod.gaussian=FALSE,
-                           family=beta_binomial2,
-                         stanvars = stanvars)
-## posterior prdictive checks
+                          family=beta_binomial())
+
+## posterior predictive checks
 plot(pp_check(par.div.set3$fit, ndraws=100))
 
 par.div.set4 <- runmodels(mod.set=mod.set4, yvar=yvars[2],
@@ -346,23 +436,64 @@ par.div.set4 <- runmodels(mod.set=mod.set4, yvar=yvars[2],
                           phylo.mat=co.var.mat,
                           name.file="set4",
                           mod.gaussian=FALSE,
-                           family=beta_binomial2,
-                         stanvars = stanvars)
-## posterior prdictive checks
+                           family=beta_binomial())
+
+## posterior predictive checks
 plot(pp_check(par.div.set4$fit, ndraws=100))
 
-## model selection
-waic(par.div.set1$fit,
-     par.div.set2$fit, par.div.set3$fit, par.div.set4$fit) 
 
-loo(par.div.set1$fit,
-     par.div.set2$fit, par.div.set3$fit, par.div.set4$fit) 
+par.div.set5 <- runmodels(mod.set=mod.set5, yvar=yvars[2],
+                          indiv.mets=sub.indiv.mets,
+                          phylo.mat=co.var.mat,
+                          name.file="set5",
+                          mod.gaussian=FALSE,
+                           family=beta_binomial())
+
+## posterior prdictive checks
+plot(pp_check(par.div.set5$fit, ndraws=100))
+
+
+save(par.div.set1,
+     par.div.set2,
+     par.div.set3,
+     par.div.set4,
+     par.div.set5,
+     file="saved/mod-comparisons/par_div.Rdata")
+
+load("saved/mod-comparisons/par_div.Rdata")
+
+## model selection
+par.div.waic <- waic(par.div.set1$fit,
+     par.div.set2$fit, par.div.set3$fit, par.div.set4$fit,
+     par.div.set5$fit) 
+par.div.waic
+
+ par.div.loo <- loo(par.div.set1$fit,
+     par.div.set2$fit, par.div.set3$fit, par.div.set4$fit,
+    par.div.set5$fit)
+ par.div.loo 
 
 ## assess r2s
 par.div.set1$br2
 par.div.set2$br2
 par.div.set3$br2
 par.div.set4$br2
+par.div.set5$br2
+
+save(par.div.waic,
+     par.div.loo,
+     par.div.set1,
+     par.div.set2,
+     par.div.set3,
+     par.div.set4,
+     par.div.set5,
+     file="saved/mod-comparisons/par_div.Rdata")
+
+
+## model 3 is the best fit, but only 0.2 different from 5 (se 2.4 so
+## greater than the difference between the models). Model 1 is also
+## only 0.7 different from 1, (se .9). So models 3,5,1 are the top
+## models. 
 
 ## ************************************************************************
 ## microbe diversity
@@ -372,7 +503,7 @@ micro.div.set1 <- runmodels(mod.set=mod.set1, yvar=yvars[4],
                           indiv.mets=sub.indiv.mets,
                           phylo.mat=co.var.mat,
                           name.file="set1",
-                          mod.gaussian=FALSE)
+                          family=gaussian())
 
 ## posterior prdictive checks
 plot(pp_check(micro.div.set1$fit, ndraws=100))
@@ -381,8 +512,8 @@ plot(pp_check(micro.div.set1$fit, ndraws=100))
 micro.div.set2 <- runmodels(mod.set=mod.set2, yvar=yvars[4],
                           indiv.mets=sub.indiv.mets,
                           phylo.mat=co.var.mat,
-                          name.file="set2",
-                          mod.gaussian=FALSE)
+                          name.file="set2",                          
+                          family=gaussian())
 ## posterior prdictive checks
 plot(pp_check(micro.div.set2$fit, ndraws=100))
 
@@ -390,7 +521,7 @@ micro.div.set3 <- runmodels(mod.set=mod.set3, yvar=yvars[4],
                           indiv.mets=sub.indiv.mets,
                           phylo.mat=co.var.mat,
                           name.file="set3",
-                          mod.gaussian=FALSE)
+                          family=gaussian())
 ## posterior prdictive checks
 plot(pp_check(micro.div.set3$fit, ndraws=100))
 
@@ -398,19 +529,45 @@ micro.div.set4 <- runmodels(mod.set=mod.set4, yvar=yvars[4],
                           indiv.mets=sub.indiv.mets,
                           phylo.mat=co.var.mat,
                           name.file="set4",
-                          mod.gaussian=FALSE)
+                          family=gaussian())
 ## posterior prdictive checks
 plot(pp_check(micro.div.set4$fit, ndraws=100))
 
+micro.div.set5 <- runmodels(mod.set=mod.set5, yvar=yvars[4],
+                          indiv.mets=sub.indiv.mets,
+                          phylo.mat=co.var.mat,
+                          name.file="set5",
+                          family=gaussian())
+## posterior prdictive checks
+plot(pp_check(micro.div.set5$fit, ndraws=100))
+
+
+save(micro.div.set1,
+     micro.div.set2,
+     micro.div.set3,
+     micro.div.set4,
+     micro.div.set5,
+     file="saved/mod-comparisons/micro_div.Rdata")
+
+load("saved/mod-comparisons/micro_div.Rdata")
+
 ## model selection
 waic(micro.div.set1$fit,
-     micro.div.set2$fit, micro.div.set3$fit, micro.div.set4$fit) 
+     micro.div.set2$fit, micro.div.set3$fit, micro.div.set4$fit,
+     micro.div.set5$fit) 
 
 loo(micro.div.set1$fit,
-     micro.div.set2$fit, micro.div.set3$fit, micro.div.set4$fit) 
+     micro.div.set2$fit, micro.div.set3$fit, micro.div.set4$fit,
+    micro.div.set5$fit) 
 
 ## assess r2s
 micro.div.set1$br2
 micro.div.set2$br2
 micro.div.set3$br2
 micro.div.set4$br2
+micro.div.set5$br2
+
+## model 1 is the best fit, but 0 different from 3 (se 1.1, so
+## greater than the difference between the models). Model 2 is also
+## only 0.1 different from 1, (se .3). So models 1,2,3 are the top
+## models. 
