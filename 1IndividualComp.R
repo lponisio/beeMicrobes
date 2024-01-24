@@ -20,20 +20,29 @@ load('data/covarmatrix_community.Rdata')
 ##  **************************************************************
 microbes <- colnames(spec)[grepl("16s",
                                       colnames(spec))]
+#drop '16s:D_0__Bacteria'
+microbes.clean <- microbes[-(grep('^16s:D_0__Bacteria$', microbes))]
 
-
-comm.microbes.indiv <- makeIndivComm(spec, microbes)
+comm.microbes.indiv <- makeIndivComm(spec, microbes.clean)
 
 ## species
 dist.microbes <- as.matrix(vegan::vegdist(comm.microbes.indiv,
                                 "altGower"))
+
+# Identify tips with labels exactly matching '16s:D_0__Bacteria'
+matching_tips <- grep('^16s:D_0__Bacteria$', tree.16s$tip.label)
+
+# Drop the matching tips
+tree.16s_clean <- drop.tip(tree.16s, matching_tips)
+
 ## phylo make distance matrix using merged tree, prune tree to match
 ## community dataset
-prune.tree.16s <- prune.sample(comm.microbes.indiv, tree.16s)
+
+prune.tree.16s <- prune.sample(comm.microbes.indiv, tree.16s_clean)
 
 ## TAKES A LONGGGGG TIME
 dist.phylo.microbes <- mod.unifrac(comm.microbes.indiv*100,
-                                          tree.16s)
+                                   prune.tree.16s)
 dist.phylo.microbes <- as.matrix(dist.phylo.microbes)
 
 ## drop the no apidae specimens
