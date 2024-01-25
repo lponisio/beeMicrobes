@@ -221,83 +221,92 @@ plotppCheck(micro.div.models)
 micro.div.r2s <- do.call(rbind, lapply(micro.div.models, extractR2))
 
 ## ************************************************************************
-## parasite originality
+## parasite originality model selection
 ## ************************************************************************
 
-## model selection
-par.orig.waic <- waic(par.orig.set1$fit,
-     par.orig.set2$fit, par.orig.set3$fit, par.orig.set4$fit,
-     par.orig.set5$fit, par.orig.set6$fit)
+load(file="saved/mod-comparisons/Parasite_originality.Rdata")
+
+par.orig.waic <- waic(par.orig.models[[1]]$fit,
+     par.orig.models[[2]]$fit, par.orig.models[[3]]$fit,
+     par.orig.models[[4]]$fit,
+     par.orig.models[[5]]$fit, par.orig.models[[6]]$fit)
 par.orig.waic
 
-par.orig.loo <- loo(par.orig.set1$fit,
-     par.orig.set2$fit, par.orig.set3$fit, par.orig.set4$fit,
-    par.orig.set5$fit, par.orig.set6$fit)
+par.orig.loo <- loo(par.orig.models[[1]]$fit,
+     par.orig.models[[2]]$fit, par.orig.models[[3]]$fit,
+     par.orig.models[[4]]$fit,
+     par.orig.models[[5]]$fit, par.orig.models[[6]]$fit)
 par.orig.loo
 
 ## expected log predictive density (elpd_loo)
 ## the estimated effective number of parameters (p_loo)
 ## the Pareto smoothed importance-sampling leave-one-out cross-validation (PSIS-LOO; looic).
 
-## lowests waic and loo is mod set 6, the nest lowest is 3 (diff 1.1,
-## se 1.1) and 4 (diff 1.3, se 1.3)
+## lowests waic and loo is mod set 6, the next lowest is 3 (diff 1.1,
+## se 1.1) and 1 (diff 1.4, se 1.2)
 
 ## ************************************************************************
-## microbe originality
+## microbe originality model selection
 ## ************************************************************************
 
-load(file="saved/mod-comparisons/micro_orig.Rdata")
+load(file="saved/mod-comparisons/Micro_originality.Rdata")
 
-## model selection
-micro.orig.waic <- waic(micro.orig.set1$fit,
-     micro.orig.set2$fit, micro.orig.set3$fit, micro.orig.set4$fit,
-     micro.orig.set5$fit, micro.orig.set6$fit) 
+micro.orig.waic <- waic(micro.orig.models[[1]]$fit,
+     micro.orig.models[[2]]$fit, micro.orig.models[[3]]$fit,
+     micro.orig.models[[4]]$fit,
+     micro.orig.models[[5]]$fit, micro.orig.models[[6]]$fit)
 micro.orig.waic
 
-micro.orig.loo <- loo(micro.orig.set1$fit,
-     micro.orig.set2$fit, micro.orig.set3$fit, micro.orig.set4$fit,
-    micro.orig.set5$fit, micro.orig.set6$fit)
+micro.orig.loo <- loo(micro.orig.models[[1]]$fit,
+     micro.orig.models[[2]]$fit, micro.orig.models[[3]]$fit,
+     micro.orig.models[[4]]$fit,
+     micro.orig.models[[5]]$fit, micro.orig.models[[6]]$fit)
 micro.orig.loo
 
-## model set 1/3 is best fit, model set 2 are next with a elpd_diff of
-## 0.1 and an SE larger than the diff of 0.7, so model set 3/2 is not
-## distinguishable from 1. Model set 1,2,3 are therefore the top
-## models.
+## model set 3 is best fit, model 1 is next (diff 0.7, se 1.0). Then
+## model set 2 (diff 0.9, 1.3)  Model set 1,2,3 are therefore the top models.
 
 ## ************************************************************************
-## parasite richness
+## parasite richness model selection
 ## ************************************************************************
 
-## model selection
-par.div.waic <- waic(par.div.set1$fit,
-     par.div.set2$fit, par.div.set3$fit, par.div.set4$fit,
-     par.div.set5$fit) 
+load(file="saved/mod-comparisons/ParasiteRichness | trials(PossibleParasite).Rdata")
+
+
+par.div.waic <- waic(par.div.models[[1]]$fit,
+     par.div.models[[2]]$fit, par.div.models[[3]]$fit,
+     par.div.models[[4]]$fit,
+     par.div.models[[5]]$fit, par.div.models[[6]]$fit)
 par.div.waic
 
- par.div.loo <- loo(par.div.set1$fit,
-     par.div.set2$fit, par.div.set3$fit, par.div.set4$fit,
-    par.div.set5$fit)
- par.div.loo 
+par.div.loo <- loo(par.div.models[[1]]$fit,
+     par.div.models[[2]]$fit, par.div.models[[3]]$fit,
+     par.div.models[[4]]$fit,
+     par.div.models[[5]]$fit, par.div.models[[6]]$fit)
+par.div.loo
 
-## model 3 is the best fit, but only 0.2 different from 5 (se 2.4 so
-## greater than the difference between the models). Model 1 is also
-## only 0.7 different from 1, (se .9). So models 3,5,1 are the top
-## models. 
-
+## model 6 is the best fit, but 3,5,1,2 all have diffs less than the
+## se of the diff.
 ## ************************************************************************
-## microbe diversity
+## microbe diversity model selection
 ## ************************************************************************
 
-## model selection
-waic(micro.div.set1$fit,
-     micro.div.set2$fit, micro.div.set3$fit, micro.div.set4$fit,
-     micro.div.set5$fit) 
+load(file="saved/mod-comparisons/Micro_partner.diversity.Rdata")
 
-loo(micro.div.set1$fit,
-     micro.div.set2$fit, micro.div.set3$fit, micro.div.set4$fit,
-    micro.div.set5$fit) 
+micro.div.waic <- waic(micro.div.models[[1]]$fit,
+     micro.div.models[[2]]$fit, micro.div.models[[3]]$fit,
+     micro.div.models[[4]]$fit,
+     micro.div.models[[5]]$fit, micro.div.models[[6]]$fit)
+micro.div.waic
 
-## model 1 is the best fit, but 0 different from 3 (se 1.1, so
-## greater than the difference between the models). Model 2 is also
-## only 0.1 different from 1, (se .3). So models 1,2,3 are the top
+micro.div.loo <- loo(micro.div.models[[1]]$fit,
+     micro.div.models[[2]]$fit, micro.div.models[[3]]$fit,
+     micro.div.models[[4]]$fit,
+     micro.div.models[[5]]$fit, micro.div.models[[6]]$fit)
+micro.div.loo
+
+
+## model 6 is the best fit, but -1.0 different from 3 (se 1.9, so
+## greater than the difference between the models). Model 2 & 1 are also
+## onlt 1.2 different from model 6 (se 1.4). So models 6,1,2,3 are the top
 ## models. 
