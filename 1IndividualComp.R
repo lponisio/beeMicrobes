@@ -7,6 +7,12 @@
 ## species taxonomic distances to construct distance matrix
 
 rm(list=ls())
+
+source("~/lab_paths.R")
+local.path
+
+setwd(paste0(local.path, "beeMicrobes"))
+
 source("src/initialize.R")
 source("src/runMRM.R")
 source("src/mod_phylo_funs.R")
