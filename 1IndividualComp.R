@@ -21,6 +21,16 @@ source("src/commPrep.R")
 source("src/CommDistbyGroup.R")
 load('data/covarmatrix_community.Rdata')
 
+
+
+## ***************************************************************
+
+#This is where I would just add on the sky islands data set,
+#I am thinking a simple join, putting NAs in the columns where they don't overlap
+#trimming what seems to be useless
+
+
+
 ## ***************************************************************
 ## 16s
 ##  **************************************************************
