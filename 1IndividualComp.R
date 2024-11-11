@@ -21,13 +21,18 @@ source("src/commPrep.R")
 source("src/CommDistbyGroup.R")
 load('data/covarmatrix_community.Rdata')
 
-
-
 ## ***************************************************************
 
 #This is where I would just add on the sky islands data set,
 #I am thinking a simple join, putting NAs in the columns where they don't overlap
 #trimming what seems to be useless
+spec_SKY <-read.csv('data/spec_RBCL_16s_SKYISLAND.csv')
+dim(spec_SKY)
+
+intersect(colnames(spec_SKY), colnames(spec))
+
+
+
 
 
 
@@ -60,6 +65,8 @@ prune.tree.16s <- prune.sample(comm.microbes.indiv, tree.16s_clean)
 dist.phylo.microbes <- mod.unifrac(comm.microbes.indiv*100,
                                    prune.tree.16s)
 dist.phylo.microbes <- as.matrix(dist.phylo.microbes)
+
+#isn't there something weird here I need to fix
 
 ## drop the no apidae specimens
 dist.phylo.microbes <- dist.phylo.microbes[
