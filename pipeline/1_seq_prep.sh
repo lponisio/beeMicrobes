@@ -22,16 +22,21 @@ docker pull mbari/qiime1
 docker pull quay.io/qiime2/core:2024.10
 
 #Helpful notes:
-# 1. if running on the shared lab computer, you may get errors if your zipped sequence results are not synched 
-#     to your dropbox account. Double clicking the file will usually make it appear. If you look at the filesize and 
-# it is 0, this is likely because the file is not synched to the local.
 
-# 2. If you get an error about memory or space issues, check that the other users do not have their dropbox files
-#     on the local computer, you can fix this by logging in and making all dropbox files online only. This should
-#     clear up enough space to fix this error.
+## 1. if running on the shared lab computer, you may get errors if
+## your zipped sequence results are not synched to your dropbox
+## account. Double clicking the file will usually make it appear. If
+## you look at the filesize and it is 0, this is likely because the
+## file is not synched to the local.
 
-# Use docker to open a container for qiime1
-# Mount the ffar pipeline folder into the qiime1 container
+## 2. If you get an error about memory or space issues, check that the
+##     other users do not have their dropbox files on the local
+##     computer, you can fix this by logging in and making all dropbox
+##     files online only. This should clear up enough space to fix
+##     this error.
+
+## Use docker to open a container for qiime1
+## Mount the ffar pipeline folder into the qiime1 container
 
 #######################################
 ### 2. Mount directory to container ###
@@ -50,158 +55,8 @@ ls
 # boot up qiime1 within the container
 source activate qiime1 
 
-###################################
-### 3. Unzip raw sequence files ###
-###################################
-
-#TODO: Make folder for example unzipping/demultiplexing populate it with one example's of files
-#TODO: Change filepaths to example folder
-
-#3: If your reads are in *fasta.gz format, unzip them with qiime, then
-#rename them "forward.fastq" and "reverse.fastq". Quinn designed the
-#barcodes in reverse so flowcell1 is the reverse and flowcell2 is the
-#forward
-
-# Step 3 only needs to be run once ever.
-
-cd R2018/
-gunzip *.gz
-
-mv 4376_S0_L001_R1_001.fastq rawreverse.fastq
-mv 4376_S0_L001_R2_001.fastq rawforward.fastq
-
-## Run 1 2018
-gunzip GC3F-JZ-7102---6632_S1_L001_R1_001.fastq.gz
-gunzip GC3F-JZ-7102---6632_S1_L001_R2_001.fastq.gz
-
-mv GC3F-JZ-7102---6632_S1_L001_R1_001.fastq rawreverse.fastq
-mv GC3F-JZ-7102---6632_S1_L001_R2_001.fastq rawforward.fastq
-
-## Run 2 2020
-cd R2023/lane1
-
-gunzip GC3F-JZ-7102---6632_S1_L001_R1_001.fastq.gz
-gunzip GC3F-JZ-7102---6632_S1_L001_R2_001.fastq.gz
-
-mv GC3F-JZ-7102---6632_S1_L001_R1_001.fastq rawreverse.fastq
-mv GC3F-JZ-7102---6632_S1_L001_R2_001.fastq rawforward.fastq
-
-## Run 3 2020
-cd R2023/lane2
-
-gunzip GC3F-JZ-7632---7075_S1_L001_R1_001.fastq.gz
-gunzip GC3F-JZ-7632---7075_S1_L001_R2_001.fastq.gz
-
-mv GC3F-JZ-7632---7075_S1_L001_R1_001.fastq rawreverse.fastq
-mv GC3F-JZ-7632---7075_S1_L001_R2_001.fastq rawforward.fastq
-
-
-############################################
-### 4. Parse barcodes from raw sequences ###
-############################################
-
-#4a: parse the barcodes in the files
-# puts our data into a format qiime2 will be able to use.
-# -- NOTE this step takes ~40 minutes to run!
-
-### PARSE SKY ISLAND BARCODES ###
-cd R2018/
-extract_barcodes.py -f rawforward.fastq -r rawreverse.fastq  -c barcode_paired_end --bc1_len 8 --bc2_len 8 -o parsed_barcodes
-
-# re-zip the output files
-cd parsed_barcodes
-gzip *.fastq
-
-mv reads1.fastq.gz forward.fastq.gz
-mv reads2.fastq.gz reverse.fastq.gz
-
-# parse the barcodes in the files, putting our data into a format
-#qiime2 will be able to use. -- NOTE this step takes ~40 minutes to run!
-cd R2023/lane1
-extract_barcodes.py -f rawforward.fastq -r rawreverse.fastq  -c barcode_paired_end --bc1_len 8 --bc2_len 8 -o parsed_barcodes
-
-# re-zip the output files
-cd parsed_barcodes
-gzip *.fastq
-
-mv reads1.fastq.gz forward.fastq.gz
-mv reads2.fastq.gz reverse.fastq.gz
-
-# parse the barcodes in the files, putting our data into a format
-#qiime2 will be able to use. -- NOTE this step takes ~40 minutes to run!
-cd R2023/lane2
-extract_barcodes.py -f rawforward.fastq -r rawreverse.fastq  -c barcode_paired_end --bc1_len 8 --bc2_len 8 -o parsed_barcodes
-
-#5c: re-zip the output files
-cd parsed_barcodes
-gzip *.fastq
-
-mv reads1.fastq.gz forward.fastq.gz
-mv reads2.fastq.gz reverse.fastq.gz
-
-### PARSE SUNFLOWER BARCODES ###
-# Run 1
-cd AppropriatePathHere
-
-extract_barcodes.py -f rawforward.fastq -r rawreverse.fastq  -c barcode_paired_end --bc1_len 8 --bc2_len 8 -o parsed_barcodes
-
-#5a: re-zip the output files
-cd parsed_barcodes
-gzip *.fastq
-
-mv reads1.fastq.gz forward.fastq.gz
-mv reads2.fastq.gz reverse.fastq.gz
-
-# Run 2
-# Run 3
-# Run 4
-
-# Exit Qiime1 and use docker to open the environment for Qiime 2. 
-exit
-
-# Mount all relevant folders to QIIME2 container
-# TODO: EDIT CODE ACCORDINGLY TO MOUNT ALL RELEVANT FOLDERS
-docker run -it \
-  -v ~/Dropbox/BMMA2025:/mnt/BMMA2025 \
-  quay.io/qiime2/amplicon:2024.10
-
-# move your directory into the mounted folder
-cd /mnt/BMMA2025
-
-# Test that the container for Qiime 2 is properly associated, then
-#make sure you are in the root directory using ls and/or pwd, then set working
-#directory to the mounted volume
-
-###########################################
-### 5. Import parsed barcodes to QIIME2 ###
-###########################################
-
-#5: Import parsed barcodes into a QIIME2 sequence file
-
-# set working directory to relevant folder
-
-### IMPORT SKY ISLAND SAMPLES ###
-## Run 1 2018
-cd R2018/
-qiime tools import --type EMPPairedEndSequences --input-path parsed_barcodes/ --output-path seqs.qza
-
-### IMPORT SUNFLOWER SAMPLES ###
-## Run 1
-cd R2018/
-qiime tools import --type EMPPairedEndSequences \
-                   --input-path parsed_barcodes/ \
-                   --output-path seqs.qza
-
-#8: Examine your mapping file, which is metadata you create associated
-#with the project. Use qiime to make it into a qzv object.
-
-#If you are examining multiple amplicon types, pick a map associated
-#with one to start with (e.g. 16s)
-
-## 2018 run 1
-cd ../../R2018/
-qiime metadata tabulate --m-input-file maps/sky2018map16s.txt --o-visualization sky2018map16s.qzv
-qiime tools view sky2018map16s.qzv
+## All of the barcode parsing and demuxing was done in the indivudal
+## project pipelines so we are starting after the demuxing. 
 
 ##############################
 ### 6. Demultiplex samples ###
@@ -215,7 +70,8 @@ cd ./data/qiime2_data/demux_files
 ### DEMULTIPLEX SKY ISLANDS SAMPLES ###
 
 ## 16S DEMUX - SKY ISLANDS ##
-# !Just one example presented here. Modify code as necessary if needing to demultiplex other sequences!
+# !Just one example presented here. Modify code as necessary if
+# !needing to demultiplex other sequences!
 
 # Run 1
 qiime demux emp-paired --i-seqs seqs.qza \
