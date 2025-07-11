@@ -43,11 +43,11 @@ docker pull quay.io/qiime2/core:2024.10
 #######################################
 
 docker run -it \
-  -v ~/Dropbox/sunflower_saved/ffar_pipeline:/mnt/ffar_pipeline \
+  -v ~/Dropbox/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
   mbari/qiime1
 
 # move your directory into the mounted folder
-cd ./mnt/ffar_pipeline
+cd ./mnt/beeMicrobes_pipeline_output
 
 # Check that all of the appropriate files/folders are in the mounted directory
 ls
