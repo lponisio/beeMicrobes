@@ -5,9 +5,12 @@
 ## *****************************************************************************
 # 1. ASSIGN TAXONOMY 16s
 ## *****************************************************************************
-#navigate to Volumes/bombus/rhayes/Dropbox\ \(University\ of\ Oregon\)/skyIslands_saved/SI_pipeline/R2018/2023_sequence_results_raw
 
-# We need taxonomic classifications 
+# The aim of this script is to assign classifications to the representative sequences (rep-seqsX.qza)
+# that were clustered with denoising algorithms in the seq_prep.sh script
+
+# navigate to the dropbox folder containing saved data files
+# cd ~/Dropbox/beeMicrobes_saved/beeMicrobes_pipeline_output
 
 # Use a information-rich database that is clustered at 99% sequence similarity at least 
 # In our case, using Silva for 16s, and NCBI AND RDP for rbcl
@@ -24,7 +27,6 @@
 # unzip Silva_132_release.zip
 # rm SILVA_132_release.zip
 
-
 #downloaded from: https://docs.qiime2.org/2023.9/data-resources/#taxonomy-classifiers-for-use-with-q2-feature-classifier
 #silva 136 SSURef N99 seq and tax files
 
@@ -33,11 +35,11 @@
 
 ## go back into qiime
 docker run -it \
-  -v ~/Dropbox/BMMA2025:/mnt/BMMA2025 \
+  -v ~/Dropbox/beeMicrobes_saved:/mnt/beeMicrobes_saved \
   qiime2/core:2019.1
 
 #updated silva classifier is in 16s_classifier folder
-cd ../mnt/BMMA2025/data/qiime2_data/training_classifiers/16s
+cd ../mnt/beeMicrobes_saved/beeMicrobes_pipeline_output/training_classifiers/16s
 
 ## 99 is 99% match between our seq and the database
 # qiime tools import \
@@ -58,6 +60,10 @@ cd ../mnt/BMMA2025/data/qiime2_data/training_classifiers/16s
 # trim silva to my region using my sequencing primers. We tell the algorithm our genomic primer forward and reverse sequences
 # we do this because taxonomic classification is more accurate when a naive bayes classifier is trained on the region
 # of the 16s sequence that we sequenced (Werner et al. 2012).
+
+# NOTE: we will deal with 2 similarly named files, ref-seqs16s.qza (reference sequences) and
+# rep_seqs16s.qza (representative sequences). These are different files and are not interchangeable.
+
 qiime feature-classifier extract-reads \
   --i-sequences silva-138-99-seqs.qza \
   --p-f-primer CMGGATTAGATACCCKGG \
@@ -66,8 +72,8 @@ qiime feature-classifier extract-reads \
 
 # visualize:
 qiime feature-table tabulate-seqs \
-  --i-data ../../merged/16s/ref-seqs16s.qza \
-  --o-visualization ../../merged/16s/ref-seqs16s.qzv
+  --i-data ref-seqs16s.qza \
+  --o-visualization ref-seqs16s.qzv
 #qiime tools view ref-seqs16s.qzv # (but this is big and took forever to load...).
 
 ## may need to clean up docker memory usage
@@ -75,7 +81,7 @@ qiime feature-table tabulate-seqs \
 
 #Train the classifier:
 qiime feature-classifier fit-classifier-naive-bayes \
-  --i-reference-reads ../../merged/16s/ref-seqs16s.qza \
+  --i-reference-reads ref-seqs16s.qza \
   --i-reference-taxonomy silva-138-99-tax.qza  \
   --o-classifier classifier16s.qza
 
@@ -91,18 +97,19 @@ qiime feature-classifier classify-sklearn \
   --o-classification  ../../merged/16s/taxonomy16s.qza
 
 # switch to the newest version of qiime
+### Why do we need to switch between versions of qiime for these two tasks?
 exit
 
 docker run -it \
-  -v ~/Dropbox/BMMA2025:/mnt/BMMA2025 \
+  -v ~/Dropbox/beeMicrobes_saved:/mnt/beeMicrobes_saved \
   qiime2/core
 
 # visualize. navigate back to where you have your taxonomy files
-cd ../mnt/BMMA2025/data/qiime2_data/training_classifiers/16s_classifier
+cd ../mnt/beeMicrobes/beeMicrobes_pipeline_output/merged/16s
 
 qiime metadata tabulate \
-  --m-input-file ../../merged/16s/taxonomy16s.qza \
-  --o-visualization ../../merged/16s/taxonomy16s.qzv
+  --m-input-file taxonomy16s.qza \
+  --o-visualization taxonomy16s.qzv
 
 
 #cant do this step without a master map, which we don't have for the merged files. 
@@ -119,7 +126,9 @@ qiime metadata tabulate \
 # We can't do all the filtering steps on the merged files, 
 # but we can do some, then we make a phylogenetic tree, then go back and filter round-specific issues
 
-# 2a. Prefilter step: The silva database does not have Lactobacillus michnerii, so our reads for Lactobacillus kunkeei are likely wrong. 
+# 2a. Prefilter step: The silva database does not have Lactobacillus michnerii, so our reads for Lactobacillus kunkeei are likely wrong.
+# UPDATE 7/14/25: silva database now has 17 reference sequences for L. micheneri, 15 of them are high quality with complete information.
+# Thus, the pre-filtering mentioned in 2a. isn't necessary anymore.
 
 # first visualize taxonomy16s.qzv. from the visualizer, download taxonomy16s.tsv. 
 # make a copy of taxonomy16s.tsv and rename it taxonomy16sfixed.tsv - we will make corrections here
@@ -127,10 +136,10 @@ qiime metadata tabulate \
 
 ## unmerged
 # qiime feature-table tabulate-seqs --i-data dada2-16s/rep-seqs-dada2-16s.qza --o-visualization dada2-16s/rep-seqs-dada2-16s.qzv
-
-
-qiime feature-table tabulate-seqs --i-data rep-seqs-16s.qza --o-visualization rep-seqs-16s.qzv
-
+  
+qiime feature-table tabulate-seqs \
+  --i-data rep-seqs-16s.qza \
+  --o-visualization rep-seqs-16s.qzv
 
 # using these two documents, select the sequence corresponding with the feature ids for L. kunkeei
 
@@ -140,54 +149,71 @@ qiime feature-table tabulate-seqs --i-data rep-seqs-16s.qza --o-visualization re
 # we didnt have to end making these modifications in sky islands or SI 2019 because we didnt have L. kunkeei or michinerii. but left this for future projects
 # if you have to make these changes,  make sure to change the paths below appropraitely. we kept everything labeled taxonomy16s.qza, NOT fixed
 
-
-qiime tools import \
---type 'FeatureData[Taxonomy]' \
---input-path taxonomy16s.qza/taxonomy16sfixed.txt \
---output-path taxonomy16s.qza/taxonomy16sfixed.qza
-
+## TODO: probably get rid of the following import command
+# qiime tools import \
+#   --type 'FeatureData[Taxonomy]' \
+#   --input-path taxonomy16s.qza/taxonomy16sfixed.txt \
+#   --output-path taxonomy16s.qza/taxonomy16sfixed.qza
 
 #2b. filter 1: out the chloroplast and mitochondria reads 
 
-qiime taxa filter-table --i-table table16s.qza --i-taxonomy taxonomy16s.qza --p-exclude mitochondria,chloroplast --o-filtered-table tablefilt1.qza
-qiime feature-table summarize --i-table tablefilt1.qza --o-visualization tablefilt1.qzv 
+qiime taxa filter-table \
+  --i-table table16s.qza \
+  --i-taxonomy taxonomy16s.qza \
+  --p-exclude mitochondria,chloroplast \
+  --o-filtered-table tablefilt1.qza
+  
+qiime feature-table summarize \
+  --i-table tablefilt1_16s.qza \
+  --o-visualization tablefilt1_16s.qzv 
 
+#2c. filter 2: remove sequences only found in one sample
+# Q: why bother doing this in QIIME2 instead of in R?
 
-#2c. filter 2: remove sequences only found in one sample 
-
-qiime feature-table filter-features --i-table tablefilt1.qza --p-min-samples 2 --o-filtered-table tablefilt2.qza
-qiime feature-table summarize --i-table tablefilt2.qza --o-visualization tablefilt2.qzv
+qiime feature-table filter-features \
+  --i-table tablefilt1.qza \
+  --p-min-samples 2 \
+  --o-filtered-table tablefilt2.qza
+  
+qiime feature-table summarize \
+  --i-table tablefilt2.qza \
+  --o-visualization tablefilt2.qzv
 
 
 #2d: Filter our rep seqs file so that you can see what samples you have left after filtering and subsampling
 
+qiime feature-table filter-seqs \
+  --i-data rep-seqs-16s.qza \
+  --i-table tablefilt2.qza \
+  --o-filtered-data rep-seqs-16s-filtered.qza
 
-qiime feature-table filter-seqs --i-data rep-seqs-16s.qza --i-table tablefilt2.qza --o-filtered-data rep-seqs-16s-filtered.qza
-qiime feature-table tabulate-seqs --i-data rep-seqs-16s-filtered.qza --o-visualization rep-seqs-16s-filtered.qzv
+qiime feature-table tabulate-seqs \
+  --i-data rep-seqs-16s-filtered.qza \
+  --o-visualization rep-seqs-16s-filtered.qzv
 #view rep-seqs-16s-filtered.qzv in qiime2 viewer in browser
-
 
 ## here is a step we are changing for 2023 -- since we are using the trees to determine microbial phylogenetic distance, we need to 
 ## filter out unwanted sequences before we generate the trees.
 ## also, we will not split sequences into runs and instead will filter out contaminants across all runs
 
-
-
 # 2e. Filter out large taxonomic groups of bacteria that are known to be contaminants
-
+# Q:??? come back to this after talking with lauren
 # there are known bacteria are salt-loving and often found in buffers. 
 # they include  Halomonas, Shewanella, Oceanospirillales, and the acne bacteria Propionibacterium. 
-
 
 qiime taxa filter-table --i-table table16s.qza --i-taxonomy taxonomy16s.qza --p-exclude halomonas,lautropia,rothia,haemophilus,desulfuromonadales,pseudomonas,devosia,sphingomonas,solirubrobacterales,escherichia-shigella,staphylococcus,prevotellaceae,blastococcus,aeromonas,streptococcus,shewanella,oceanospirillales,propionibacteriales --o-filtered-table tablef1.qza
 
 # 2f. Let's specifically look at sequences in our controls and remove the bacteria that are in them
-
-
-qiime taxa barplot --i-table tablef1.qza --i-taxonomy taxonomy16s.qza --m-metadata-file maps/combined-map-2018-2021.txt --o-visualization taxa-bar-plots-f1.qzv
+qiime taxa barplot \
+  --i-table tablef1.qza \
+  --i-taxonomy taxonomy16s.qza \
+  --m-metadata-file yourMergedMapHere \
+  --o-visualization taxa-bar-plots-f1.qzv
 
 # now filter out taxa that are in the controls!
 # manually selected from the table16s file which ASVs were found in controls and wrote them down here
+## NOTE/Q: can we just do this later in R and define an object containing only controls, then subtract out taxa from the other samples?
+## This would need to be done in phyloseq.
 
 #2018 controls
 qiime taxa filter-table --i-table tablef1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea",\
