@@ -62,7 +62,9 @@ source activate qiime1
 ### 6. Demultiplex samples ###
 ##############################
 
-cd ./data/qiime2_data/demux_files
+# Not run for beeMicrobes analysis, but a single example included for replicability
+
+cd ./demux_files
 
 #9: Demultiplex 16s reads first. Only works in version Qiime2 2019.1
 #note: this step takes ~2 hours!
@@ -87,54 +89,6 @@ ls -lh SF_R0_demux16s.qza
 qiime demux summarize --i-data /mnt/BMMA2025/data/qiime2_data/demux_files/SF_R0_demux16s.qza \
                       --o-visualization ../qzv_files/SF_R0_demux16s.qzv
 qiime tools view SF_R0_demux16s.qzv
-
-## SF R1
-qiime demux summarize --i-data SF_R1_demux16s.qza \
-                      --o-visualization ../qzv_files/SF_R1_demux16s.qzv
-qiime tools view SF_R1_demux16s.qzv
-
-## SF R2
-qiime demux summarize --i-data SF_R2_demux16s.qza \
-                      --o-visualization ../qzv_files/SF_R2_demux16s.qzv
-qiime tools view SF_R2_demux16s.qzv
-
-## SF R3
-qiime demux summarize --i-data SF_R3_demux16s.qza \
-                      --o-visualization ../qzv_files/SF_R3_demux16s.qzv
-qiime tools view SF_R3_demux16s.qzv
-
-## SF R4
-qiime demux summarize --i-data SF_R4_demux16s.qza \
-                      --o-visualization SF_R4_demux16s.qzv
-qiime tools view SF_R4_demux16s.qzv
-
-## RBCL QZV
-
-## SF R0
-qiime demux summarize --i-data SF_R0_demuxRBCL.qza \
-                      --o-visualization ../qzv_files/SF_R0_demuxRBCL.qzv
-qiime tools view SF_R0_demuxRBCL.qzv
-
-## SF R1
-qiime demux summarize --i-data SF_R1_demuxRBCL.qza \
-                      --o-visualization ../qzv_files/SF_R1_demuxRBCL.qzv
-qiime tools view SF_R1_demuxRBCL.qzv
-
-## SF R2
-qiime demux summarize --i-data SF_R2_demuxRBCL.qza \
-                      --o-visualization ../qzv_files/SF_R2_demuxRBCL.qzv
-qiime tools view SF_R2_demuxRBCL.qzv
-
-## SF R3
-qiime demux summarize --i-data SF_R3_demuxRBCL.qza \
-                      --o-visualization ../qzv_files/SF_R3_demuxRBCL.qzv
-qiime tools view SF_R3_demuxRBCL.qzv
-
-## SF R4
-qiime demux summarize --i-data SF_R4_demuxRBCL.qza \
-                      --o-visualization SF_R4_demuxRBCL.qzv
-qiime tools view SF_R4_demuxRBCL.qzv
-
 
 ##################################
 ### 7. Cluster reads into ASVs ###
@@ -171,8 +125,13 @@ qiime dada2 denoise-paired  \
   --o-denoising-stats ../denoising_stats/SI_R2018_denoising-stats16s.qza
 
 
-qiime feature-table tabulate-seqs --i-data dada2-16s/rep-seqs-dada2-16s.qza --o-visualization dada2-16s/rep-seqs-dada2-16s.qzv
-qiime feature-table summarize --i-table dada2-16s/table16s.qza --o-visualization dada2-16s/table16s.qzv
+qiime feature-table tabulate-seqs \
+  --i-data ../rep_seqs/SI_R2018_rep-seqs16s.qza \
+  --o-visualization ../qzv_files/SI_R2018_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SI_R2018_table16s.qza \
+  --o-visualization ../qzv_files/SI_R2018_table16s.qzv
 
 ## Run 2 2023 lane1
 qiime dada2 denoise-paired  \
@@ -186,8 +145,13 @@ qiime dada2 denoise-paired  \
   --o-table ../feature_tables/SI_R2023_L1_table16s.qza \
   --o-denoising-stats ../denoising_stats/SI_R2023_L1_denoising-stats16s.qza
   
-qiime feature-table tabulate-seqs --i-data dada2-16s/rep-seqs-dada2-16s.qza --o-visualization dada2-16s/rep-seqs-dada2-16s.qzv
-qiime feature-table summarize --i-table dada2-16s/table16s.qza --o-visualization dada2-16s/table16s.qzv
+qiime feature-table tabulate-seqs \
+  --i-data ../rep_seqs/SI_R2023_L1_rep-seqs16s.qza \
+  --o-visualization ../qzv_files/SI_R2023_L1_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../rep_seqs/SI_R2023_L1_table16s.qza \
+  --o-visualization ../qzv_files/SI_R2023_L1_table16s.qzv
 
 ## Run 3 2023 lane2
 qiime dada2 denoise-paired  \
@@ -201,8 +165,13 @@ qiime dada2 denoise-paired  \
   --o-table feature_tables/SI_R2023_L2_table16s.qza \
   --o-denoising-stats denoising_stats/SI_R2023_L2_denoising-stats16s.qza
 
-qiime feature-table tabulate-seqs --i-data dada2-16s/rep-seqs-dada2-16s.qza --o-visualization dada2-16s/rep-seqs-dada2-16s.qzv
-qiime feature-table summarize --i-table dada2-16s/table16s.qza --o-visualization dada2-16s/table16s.qzv
+qiime feature-table tabulate-seqs \
+  --i-data ../rep_seqs/SI_R2023_L2_rep-seqs16s.qza \
+  --o-visualization ../qzv_files/SI_R2023_L2_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SI_R2023_L2_table16s.qza \
+  --o-visualization ../qzv_files/SI_R2023_L2_table16s.qzv
 
 ## repeat the steps for RBCL
 
@@ -218,6 +187,14 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/SI_R2018_rep-seqsRBCL.qza  \
   --o-table feature_tables/SI_R2018_tableRBCL.qza \
   --o-denoising-stats denoising_stats/SI_R2018_denoising-statsRBCL.qza
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep_seqs/SI_R2018_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SI_R2018_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SI_R2018_tableRBCL.qza \
+  --o-visualization ../qzv_files/SI_R2018_tableRBCL.qzv
  
 ## 2023 Lane 1 RBCL
 qiime dada2 denoise-paired  \
@@ -230,6 +207,14 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/SI_R2023_L1_rep-seqsRBCL.qza  \
   --o-table feature_tables/SI_R2023_L1_tableRBCL.qza \
   --o-denoising-stats denoising_stats/SI_R2023_L1_denoising-statsRBCL.qza
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../feature_tables/SI_R2023_L1_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SI_R2023_L1_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../rep-seqs/SI_R2023_L1_tableRBCL.qza \
+  --o-visualization ../qzv_files/SI_R2023_L1_tableRBCL.qzv
  
 ## 2023 Lane 2 RBCL
 qiime dada2 denoise-paired  \
@@ -242,9 +227,14 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/SI_R2023_L2_rep-seqsRBCL.qza  \
   --o-table feature_tables/SI_R2023_L2_tableRBCL.qza \
   --o-denoising-stats denoising_stats/SI_R2023_L1_denoising-statsRBCL.qza
-
-qiime feature-table tabulate-seqs --i-data dada2-16s/rep-seqs-dada2-16s.qza --o-visualization dada2-16s/rep-seqs-dada2-16s.qzv
-qiime feature-table summarize --i-table dada2-16s/table16s.qza --o-visualization dada2-16s/table16s.qzv
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SI_R2023_L2_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SI_R2023_L2_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SI_R2023_L2_tableRBCL.qza \
+  --o-visualization ../qzv_files/SI_R2023_L2_tableRBCL.qzv
 
 ###########################
 ### Sunflower Denoising ###
@@ -261,6 +251,14 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/SF_R0_rep-seqs16s.qza  \
   --o-table feature_tables/SF_R0_table16s.qza \
   --o-denoising-stats denoising_stats/SF_R0_denoising-stats16s.qza
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SF_R0_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SF_R0_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SF_R0_table16s.qza \
+  --o-visualization ../qzv_files/SF_R0_table16s.qzv
 
 ## SF 16S Run 1
 qiime dada2 denoise-paired  \
@@ -273,6 +271,14 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/SF_R1_rep-seqs16s.qza  \
   --o-table feature_tables/SF_R1_table16s.qza \
   --o-denoising-stats denoising_stats/SF_R1_denoising-stats16s.qza
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SF_R1_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SF_R1_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SF_R1_table16s.qza \
+  --o-visualization ../qzv_files/SF_R1_table16s.qzv
  
  ## SF 16S Run 2
 qiime dada2 denoise-paired  \
@@ -285,9 +291,14 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/SF_R2_rep-seqs16s.qza  \
   --o-table feature_tables/SF_R2_table16s.qza \
   --o-denoising-stats denoising_stats/SF_R2_denoising-stats16s.qza
-
-qiime feature-table tabulate-seqs --i-data dada2-16s/rep-seqs-dada2-16s.qza --o-visualization dada2-16s/rep-seqs-dada2-16s.qzv
-qiime feature-table summarize --i-table dada2-16s/table16s.qza --o-visualization dada2-16s/table16s.qzv
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SF_R2_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SF_R2_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SF_R2_table16s.qza \
+  --o-visualization ../qzv_files/SF_R2_table16s.qzv
 
 ## SF 16S Run 3
 qiime dada2 denoise-paired  \
@@ -301,6 +312,14 @@ qiime dada2 denoise-paired  \
   --o-table feature_tables/SF_R3_table16s.qza \
   --o-denoising-stats denoising_stats/SF_R3_denoising-stats16s.qza
  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SF_R3_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SF_R3_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SF_R3_table16s.qza \
+  --o-visualization ../qzv_files/SF_R3_table16s.qzv
+ 
 ## SF 16S Run 4
 qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SF_R4_demux16s.qza  \
@@ -313,8 +332,13 @@ qiime dada2 denoise-paired  \
   --o-table feature_tables/SF_R4_table16s.qza \
   --o-denoising-stats denoising_stats/SF_R4_denoising-stats16s.qza
 
-qiime feature-table tabulate-seqs --i-data dada2-16s/rep-seqs-dada2-16s.qza --o-visualization dada2-16s/rep-seqs-dada2-16s.qzv
-qiime feature-table summarize --i-table dada2-16s/table16s.qza --o-visualization dada2-16s/table16s.qzv
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SF_R4_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SF_R4_rep-seqs16s.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SF_R4_table16s.qza \
+  --o-visualization ../qzv_files/SF_R4_table16s.qzv
 
 ## Repeat for RBCL
 
@@ -329,6 +353,14 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/SF_R0_rep-seqsRBCL.qza  \
   --o-table feature_tables/SF_R0_tableRBCL.qza \
   --o-denoising-stats denoising_stats/SF_R0_denoising-statsRBCL.qza
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SF_R0_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SF_R0_rep-seqsRBCL.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SF_R0_tableRBCL.qza \
+  --o-visualization ../qzv_files/SF_R0_tableRBCL.qzv
 
 ## SF RBCL Run 1
 qiime dada2 denoise-paired  \
@@ -341,6 +373,14 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/SF_R1_rep-seqsRBCL.qza  \
   --o-table feature_tables/SF_R1_tableRBCL.qza \
   --o-denoising-stats denoising_stats/SF_R1_denoising-statsRBCL.qza
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SF_R1_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SF_R1_rep-seqsRBCL.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SF_R1_tableRBCL.qza \
+  --o-visualization ../qzv_files/SF_R1_tableRBCL.qzv
  
 ## SF RBCL Run 2
 qiime dada2 denoise-paired  \
@@ -354,8 +394,13 @@ qiime dada2 denoise-paired  \
   --o-table feature_tables/SF_R2_tableRBCL.qza \
   --o-denoising-stats denoising_stats/SF_R2_denoising-statsRBCL.qza
 
-qiime feature-table tabulate-seqs --i-data dada2-RBCL/rep-seqs-dada2-RBCL.qza --o-visualization dada2-RBCL/rep-seqs-dada2-RBCL.qzv
-qiime feature-table summarize --i-table dada2-RBCL/table16s.qza --o-visualization dada2-RBCL/table16s.qzv
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SF_R2_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SF_R2_rep-seqsRBCL.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SF_R2_tableRBCL.qza \
+  --o-visualization ../qzv_files/SF_R2_tableRBCL.qzv
 
 ## RBCL Run 3
 qiime dada2 denoise-paired  \
@@ -368,6 +413,14 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/SF_R3_rep-seqsRBCL.qza  \
   --o-table feature_tables/SF_R3_tableRBCL.qza \
   --o-denoising-stats denoising_stats/SF_R3_denoising-statsRBCL.qza
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SF_R3_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SF_R3_rep-seqsRBCL.qzv
+  
+qiime feature-table summarize \
+  --i-table ../feature_tables/SF_R3_tableRBCL.qza \
+  --o-visualization ../qzv_files/SF_R3_tableRBCL.qzv
  
 ## RBCL Run 4
 qiime dada2 denoise-paired  \
@@ -381,8 +434,13 @@ qiime dada2 denoise-paired  \
   --o-table feature_tables/SF_R3_tableRBCL.qza \
   --o-denoising-stats denoising_stats/SF_R4_denoising-statsRBCL.qza
 
-qiime feature-table tabulate-seqs --i-data dada2-RBCL/rep-seqs-dada2-RBCL.qza --o-visualization dada2-RBCL/rep-seqs-dada2-RBCL.qzv
-qiime feature-table summarize --i-table dada2-RBCL/table16s.qza --o-visualization dada2-RBCL/table16s.qzv
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/SF_R4_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/SF_R4_rep-seqsRBCL.qzv
+
+qiime feature-table summarize \
+  --i-table ../feature_tables/SF_R4_tableRBCL.qza \
+  --o-visualization ../qzv_files/SF_R4_tableRBCL.qzv
 
 ###########################
 ### OR Survey Denoising ###
@@ -391,8 +449,6 @@ qiime feature-table summarize --i-table dada2-RBCL/table16s.qza --o-visualizatio
 ## 16s Denoising
 
 ## OR 16S Run 2023
-# modify appropriatley
-cd theCorrectFilePath
 qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SF_R2_demux16s.qza  \
   --p-trunc-len-f 156  \
@@ -403,20 +459,27 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/OR_R2023_rep-seqs16s.qza  \
   --o-table feature_tables/OR_R2023_table16s.qza \
   --o-denoising-stats denoising_stats/OR_R2023_denoising-stats16s.qza
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/OR_R2023_rep-seqs16s.qza \
+  --o-visualization ../qzv_files/OR_R2023_rep-seqs16s.qzv
+
+qiime feature-table summarize \
+  --i-table ../feature_tables/OR_R2023_table16s.qza \
+  --o-visualization ../qzv_files/OR_R2023_table16s.qzv
 
 ## OR 16S Run 2024
-# modify appropriatley
-cd theCorrectFilePath
-qiime dada2 denoise-paired  \
-  --i-demultiplexed-seqs SF_R2_demux16s.qza  \
-  --p-trunc-len-f numberHere  \
-  --p-trunc-len-r numberHere  \
-  --p-trim-left-f 0  \
-  --p-n-threads 2  \
-  --output-dir dada2-16s  \
-  --o-representative-sequences rep_seqs/OR_R2024_rep-seqs16s.qza  \
-  --o-table feature_tables/OR_R2024_table16s.qza \
-  --o-denoising-stats denoising_stats/OR_R2024_denoising-stats16s.qza
+## modify code appropriately once the data is ready
+# qiime dada2 denoise-paired  \
+#   --i-demultiplexed-seqs SF_R2_demux16s.qza  \
+#   --p-trunc-len-f numberHere  \
+#   --p-trunc-len-r numberHere  \
+#   --p-trim-left-f 0  \
+#   --p-n-threads 2  \
+#   --output-dir dada2-16s  \
+#   --o-representative-sequences rep_seqs/OR_R2024_rep-seqs16s.qza  \
+#   --o-table feature_tables/OR_R2024_table16s.qza \
+#   --o-denoising-stats denoising_stats/OR_R2024_denoising-stats16s.qza
  
 ## Repeat for RBCL
 
@@ -433,6 +496,14 @@ qiime dada2 denoise-paired  \
   --o-representative-sequences rep_seqs/OR_R2023_rep-seqsRBCL.qza  \
   --o-table feature_tables/OR_R2023_tableRBCL.qza \
   --o-denoising-stats denoising_stats/OR_R2023_denoising-statsRBCL.qza
+  
+qiime feature-table tabulate-seqs \
+  --i-data ../rep-seqs/OR_R2023_rep-seqsRBCL.qza \
+  --o-visualization ../qzv_files/OR_R2023_rep-seqsRBCL.qzv
+
+qiime feature-table summarize \
+  --i-table ../feature_tables/OR_R2023_tableRBCL.qza \
+  --o-visualization ../qzv_files/OR_R2023_tableRBCL.qzv
 
 # check outputs to make sure you didn't lose too many samples. 
 # We found being more conservative and doing shorter truncations gives you the same number of sequences, 
@@ -446,7 +517,7 @@ qiime dada2 denoise-paired  \
 
 # cd back to your main folder (in this case the qiime2_data folder)
 
-## make a new merge directory, and separate 16s and RBCL directories within it
+## make a new merge directory if it doesn't already exist, and separate 16s and RBCL directories within it
 cd ../
 mkdir merged
 cd merged
@@ -507,4 +578,4 @@ qiime feature-table merge \
       --i-tables rep_seqs/OR_R2023_rep-seqsRBCL.qza \
       --o-merged-table merged/RBCL/rep-seqsRBCL.qza
 
-# End of script. Move to 2_0_pipeline_16s.sh to proceed with data prep
+# End of script. Move to 2_taxonomy_16s.sh to proceed with data prep
