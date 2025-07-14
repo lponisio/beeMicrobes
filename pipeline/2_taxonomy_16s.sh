@@ -236,10 +236,17 @@ qiime taxa filter-table --i-table tablef2.qza --i-taxonomy taxonomy16s.qza --p-m
 "d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Caulobacterales;f__Caulobacteraceae;g__Phenylobacterium",\
 "Unassigned" --o-filtered-table tablef3.qza
 
-qiime taxa barplot --i-table tablef3.qza --i-taxonomy taxonomy16s.qza --m-metadata-file maps/combined-map-2018-2021.txt --o-visualization taxa-bar-plots-f3.qzv
+qiime taxa barplot \
+  --i-table tablef3.qza \
+  --i-taxonomy taxonomy16s.qza \
+  --m-metadata-file maps/combined-map-2018-2021.txt \
+  --o-visualization taxa-bar-plots-f3.qzv
 
 #Filter out controls by making new map file excluding controls
-qiime feature-table filter-samples --i-table tablef3.qza --m-metadata-file maps/combined-map-2018-2021-noCtrl.txt --o-filtered-table tablef4.qza
+qiime feature-table filter-samples \
+  --i-table tablef3.qza \
+  --m-metadata-file maps/combined-map-2018-2021-noCtrl.txt \
+  --o-filtered-table tablef4.qza
 
 #now need to filter the rep-seqs FeatureTable[sequence] to the updated fitered FeatureTable[frequency]
 
@@ -248,7 +255,6 @@ qiime feature-table filter-seqs \
 --i-table tablef4.qza \
 --o-filtered-data rep-seqs-16s-final-filter.qza
   
-  
 ### ************************************************************************
 ## 3. #GENERATE TREE FOR PHYLOGENETIC DIVERSITY ANALYSES
 ### ************************************************************************
@@ -256,14 +262,20 @@ qiime feature-table filter-seqs \
 # generate a tree with the merged data
 
 #Now alignment of the reads using MAFFT.
-qiime alignment mafft --i-sequences rep-seqs-16s-final-filter.qza --o-alignment aligned_repseqs16s.qza
+qiime alignment mafft \
+  --i-sequences rep-seqs-16s-final-filter.qza \
+  --o-alignment aligned_repseqs16s.qza
 
 #Then filter out the unconserved, highly gapped columns from alignment
-qiime alignment mask --i-alignment aligned_repseqs16s.qza --o-masked-alignment masked_aligned_repseqs16s.qza
+qiime alignment mask \
+  --i-alignment aligned_repseqs16s.qza \
+  --o-masked-alignment masked_aligned_repseqs16s.qza
 
 #And make a tree with Fasttree which creates a maximum likelihood phylogenetic trees from aligned sequences
 #for more information on fastree, http://www.microbesonline.org/fasttree/
-qiime phylogeny fasttree --i-alignment masked_aligned_repseqs16s.qza --o-tree unrooted_tree16s.qza
+qiime phylogeny fasttree \
+  --i-alignment masked_aligned_repseqs16s.qza \
+  --o-tree unrooted_tree16s.qza
 
 #now root it
 qiime phylogeny midpoint-root --i-tree unrooted_tree16s.qza --o-rooted-tree rooted-tree16s.qza
