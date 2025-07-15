@@ -154,10 +154,12 @@ qiime feature-table summarize \
 ## Run 2 2023 lane1
 qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SI_R2023_L1_demux16s.qza  \
-  --p-trunc-len-f 205  \
-  --p-trunc-len-r 237  \
+  --p-trunc-len-f 266  \
+  --p-trunc-len-r 267  \
   --p-trim-left-f 0  \
-  --p-n-threads 0  \
+  --p-n-threads 8  \
+  --p-max-ee-f 3 \
+  --p-max-ee-r 3 \
   --o-representative-sequences ../rep-seqs/SI_R2023_L1_rep-seqs16s.qza  \
   --o-table ../feature_tables/SI_R2023_L1_table16s.qza \
   --o-denoising-stats ../denoising_stats/SI_R2023_L1_denoising-stats16s.qza \
@@ -174,14 +176,13 @@ qiime feature-table summarize \
 ## Run 3 2023 lane2
 qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SI_R2023_L2_demux16s.qza  \
-  --p-trunc-len-f 147  \
-  --p-trunc-len-r 192  \
+  --p-trunc-len-f 188  \
+  --p-trunc-len-r 238  \
   --p-trim-left-f 0  \
-  --p-n-threads 0  \
-  --output-dir dada2-16s  \
-  --o-representative-sequences rep-seqs/SI_R2023_L2_rep-seqs16s.qza  \
-  --o-table feature_tables/SI_R2023_L2_table16s.qza \
-  --o-denoising-stats denoising_stats/SI_R2023_L2_denoising-stats16s.qza \
+  --p-n-threads 6  \
+  --o-representative-sequences ../rep-seqs/SI_R2023_L2_rep-seqs16s.qza  \
+  --o-table ../feature_tables/SI_R2023_L2_table16s.qza \
+  --o-denoising-stats ../denoising_stats/SI_R2023_L2_denoising-stats16s.qza \
   --verbose
 
 qiime feature-table tabulate-seqs \
