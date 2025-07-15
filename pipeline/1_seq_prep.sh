@@ -19,7 +19,7 @@
 docker pull mbari/qiime1
 
 ### FOR QIIME2 ###
-docker pull quay.io/qiime2/core:2024.10
+docker pull quay.io/qiime2/core
 
 #Helpful notes:
 
@@ -42,13 +42,19 @@ docker pull quay.io/qiime2/core:2024.10
 ### 2. Mount directory to container ###
 #######################################
 
-docker run -it \
-  -v ~/Dropbox/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
-  mbari/qiime1
+## Use the following code (or a locally appropriate version of it) if working on your own computer
+# docker run -it \
+#   -v ~/Dropbox/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
+#   mbari/qiime1
 
+## Use the following path if running code on the lab computer
+docker run -it \
+  -v /Volumes/bombus/ncullen/Dropbox\ \(University\ of\ Oregon\)/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
+  mbari/qiime1
+  
 # move your directory into the mounted folder
 cd ./mnt/beeMicrobes_pipeline_output
-
+  
 # Check that all of the appropriate files/folders are in the mounted directory
 ls
 
@@ -106,7 +112,20 @@ qiime tools view SF_R0_demux16s.qzv
 
 ### 16S Denoising (ASV Assignment) ###
 
-#############################
+## Use the following code (or a locally appropriate version of it) if working on your own computer
+# docker run -it \
+#   -v ~/Dropbox/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
+#   mbari/qiime1
+
+# mount folder to qiime2 container
+docker run -it \
+  -v /Volumes/bombus/ncullen/University\ of\ Oregon\ Dropbox/Nevin\ Cullen/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
+  qiime2/core
+
+# move directory into container and into demultiplexed files folder
+cd ./mnt/beeMicrobes_pipeline_output/demux_files
+
+############################# 
 ### Sky Islands Denoising ###
 #############################
 
@@ -120,10 +139,9 @@ qiime dada2 denoise-paired  \
   --p-trim-left-f 0  \
   --p-n-threads 0  \
   --output-dir dada2-16s  \
-  --o-representative-sequences ../rep_seqs/SI_R2018_rep-seqs16s.qza  \
+  --o-representative-sequences ../rep-seqs/SI_R2018_rep-seqs16s.qza  \
   --o-table ../feature_tables/SI_R2018_table16s.qza \
   --o-denoising-stats ../denoising_stats/SI_R2018_denoising-stats16s.qza
-
 
 qiime feature-table tabulate-seqs \
   --i-data ../rep_seqs/SI_R2018_rep-seqs16s.qza \

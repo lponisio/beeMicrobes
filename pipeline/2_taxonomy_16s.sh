@@ -111,7 +111,6 @@ qiime metadata tabulate \
   --m-input-file taxonomy16s.qza \
   --o-visualization taxonomy16s.qzv
 
-
 #cant do this step without a master map, which we don't have for the merged files. 
 #skip for now. we still wanna do the other steps on the merged files
 # cd ../../
@@ -179,8 +178,8 @@ qiime feature-table summarize \
   --i-table tablefilt2.qza \
   --o-visualization tablefilt2.qzv
 
-
 #2d: Filter our rep seqs file so that you can see what samples you have left after filtering and subsampling
+## Q:??
 
 qiime feature-table filter-seqs \
   --i-data rep-seqs-16s.qza \
@@ -197,7 +196,7 @@ qiime feature-table tabulate-seqs \
 ## also, we will not split sequences into runs and instead will filter out contaminants across all runs
 
 # 2e. Filter out large taxonomic groups of bacteria that are known to be contaminants
-# Q:??? come back to this after talking with lauren
+# Q:?? come back to this after talking with lauren
 # there are known bacteria are salt-loving and often found in buffers. 
 # they include  Halomonas, Shewanella, Oceanospirillales, and the acne bacteria Propionibacterium. 
 
@@ -212,8 +211,6 @@ qiime taxa barplot \
 
 # now filter out taxa that are in the controls!
 # manually selected from the table16s file which ASVs were found in controls and wrote them down here
-## NOTE/Q: can we just do this later in R and define an object containing only controls, then subtract out taxa from the other samples?
-## This would need to be done in phyloseq.
 
 #2018 controls
 qiime taxa filter-table --i-table tablef1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea",\
@@ -278,14 +275,20 @@ qiime phylogeny fasttree \
   --o-tree unrooted_tree16s.qza
 
 #now root it
-qiime phylogeny midpoint-root --i-tree unrooted_tree16s.qza --o-rooted-tree rooted-tree16s.qza
+qiime phylogeny midpoint-root \
+  --i-tree unrooted_tree16s.qza \
+  --o-rooted-tree rooted-tree16s.qza
 
+qiime phylogeny align-to-tree-mafft-fasttree \
+  --i-sequences rep-seqs-16s-final-filter.qza \
+  --o-alignment aligned_repseqs16s.qza \
+  --o-masked-alignment masked_aligned_repseqs16s.qza \
+  --o-tree unrooted_tree16s.qza \
+  --o-rooted-tree rooted-tree16s.qza
 
-qiime phylogeny align-to-tree-mafft-fasttree --i-sequences rep-seqs-16s-final-filter.qza --o-alignment aligned_repseqs16s.qza --o-masked-alignment masked_aligned_repseqs16s.qza --o-tree unrooted_tree16s.qza --o-rooted-tree rooted-tree16s.qza
-
-
+## NOTE: need to double check if the error below is still occurring
 ## now to fix the error: The table does not appear to be completely represented by the phylogeny.
-#need to drop from the tree faetures not in the table anymore after filtering
+#need to drop from the tree features not in the table anymore after filtering
 
 qiime fragment-insertion filter-features \
 --i-table tablef4.qza \
@@ -306,10 +309,6 @@ qiime diversity alpha-rarefaction --i-table tablef5.qza --i-phylogeny rooted-tre
 
 qiime feature-table summarize --i-table tablef5.qza --o-visualization tablef5.qzv
 
-
-
-
-
 ### *************************************************************************
 # 5. ALPHA AND BETA DIVERSITY
 ### *************************************************************************
@@ -317,18 +316,30 @@ qiime feature-table summarize --i-table tablef5.qza --o-visualization tablef5.qz
 #Generate core metrics folder. This command makes the new directory and outputs a bunch of files in it
 # make sured youre in "merged/16s"
 
+## NOTE: NEED TO RENAME THIS FOLDER
 mkdir final
 
-qiime diversity core-metrics-phylogenetic --i-phylogeny rooted-tree16s.qza --i-table tablef5.qza --p-sampling-depth 840 --m-metadata-file maps/combined-map-2018-2021.txt --output-dir final/core_metrics16s --verbose
-
+## NOTE: Need to find map files and generate combined map file.
+qiime diversity core-metrics-phylogenetic \
+  --i-phylogeny rooted-tree16s.qza \
+  --i-table tablef5.qza \
+  --p-sampling-depth 840 \
+  --m-metadata-file maps/combined-map-2018-2021.txt \
+  --output-dir final/core_metrics16s \
+  --verbose
 
 #if you want to specify the number of parallel cores running, add this to the code
+# if running on the lab computer, you have 15 cores to work with
 --p-n-jobs 8
 
 #now we have lots of files in that core_metrics directory. gotta export rarefied_table.qza so we can get a qzv and convert to a csv
 #using combined full map
-qiime taxa barplot --i-table final/core_metrics16s/rarefied_table.qza --i-taxonomy taxonomy16s.qza --m-metadata-file maps/combined-map-2018-2021-noCtrl.txt --o-visualization final/core_metrics16s/rarefiedtable16s.qzv
-
+qiime taxa barplot \
+  --i-table final/core_metrics16s/rarefied_table.qza \
+  --i-taxonomy taxonomy16s.qza \
+  --m-metadata-file maps/combined-map-2018-2021-noCtrl.txt \
+  --o-visualization final/core_metrics16s/rarefiedtable16s.qzv
 
 #drag the new qzv into qiime 2 view, set taxonomic level to 7, and download a csv! put this into "final asv tables" folder
 
+# end of script, proceed to X_taxonomy_RBCL.sh
