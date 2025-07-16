@@ -121,6 +121,10 @@ qiime tools view SF_R0_demux16s.qzv
 docker run -it \
   -v /Volumes/bombus/ncullen/University\ of\ Oregon\ Dropbox/Nevin\ Cullen/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
   quay.io/qiime2/amplicon:2024.10
+  
+docker run -it \
+  -v /Volumes/bombus/ncullen/University\ of\ Oregon\ Dropbox/Nevin\ Cullen/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
+  quay.io/qiime2/core:2019.1
 
 # move directory into container and into demultiplexed files folder
 cd ../../mnt/beeMicrobes_pipeline_output/demux_files
@@ -154,12 +158,9 @@ qiime feature-table summarize \
 ## Run 2 2023 lane1
 qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SI_R2023_L1_demux16s.qza  \
-  --p-trunc-len-f 266  \
-  --p-trunc-len-r 267  \
-  --p-trim-left-f 0  \
-  --p-n-threads 8  \
-  --p-max-ee-f 3 \
-  --p-max-ee-r 3 \
+  --p-trunc-len-f 205  \
+  --p-trunc-len-r 237  \
+  --p-n-threads 2  \
   --o-representative-sequences ../rep-seqs/SI_R2023_L1_rep-seqs16s.qza  \
   --o-table ../feature_tables/SI_R2023_L1_table16s.qza \
   --o-denoising-stats ../denoising_stats/SI_R2023_L1_denoising-stats16s.qza \
@@ -196,16 +197,14 @@ qiime feature-table summarize \
 ## repeat the steps for RBCL
 
 ## 2018 RBCL
-cd R2023/lane2
 qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SI_R2018_demuxRBCL.qza  \
   --p-trunc-len-f 180  \
   --p-trunc-len-r 218  \
-  --p-trim-left-f 0  \
-  --p-n-threads 0  \
-  --o-representative-sequences rep-seqs/SI_R2018_rep-seqsRBCL.qza  \
-  --o-table feature_tables/SI_R2018_tableRBCL.qza \
-  --o-denoising-stats denoising_stats/SI_R2018_denoising-statsRBCL.qza \
+  --p-n-threads 2  \
+  --o-representative-sequences ../rep-seqs/SI_R2018_rep-seqsRBCL.qza  \
+  --o-table ../feature_tables/SI_R2018_tableRBCL.qza \
+  --o-denoising-stats ../denoising_stats/SI_R2018_denoising-statsRBCL.qza \
   --verbose
   
 qiime feature-table tabulate-seqs \
@@ -222,10 +221,10 @@ qiime dada2 denoise-paired  \
   --p-trunc-len-f 232  \
   --p-trunc-len-r 225  \
   --p-trim-left-f 0  \
-  --p-n-threads 0  \
-  --o-representative-sequences rep-seqs/SI_R2023_L1_rep-seqsRBCL.qza  \
-  --o-table feature_tables/SI_R2023_L1_tableRBCL.qza \
-  --o-denoising-stats denoising_stats/SI_R2023_L1_denoising-statsRBCL.qza \
+  --p-n-threads 2  \
+  --o-representative-sequences ../rep-seqs/SI_R2023_L1_rep-seqsRBCL.qza  \
+  --o-table ../feature_tables/SI_R2023_L1_tableRBCL.qza \
+  --o-denoising-stats ../denoising_stats/SI_R2023_L1_denoising-statsRBCL.qza \
   --verbose
   
 qiime feature-table tabulate-seqs \
@@ -241,11 +240,10 @@ qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SI_R2023_L1_demuxRBCL.qza  \
   --p-trunc-len-f 138  \
   --p-trunc-len-r 192  \
-  --p-trim-left-f 0  \
   --p-n-threads 0  \
-  --o-representative-sequences rep-seqs/SI_R2023_L2_rep-seqsRBCL.qza  \
-  --o-table feature_tables/SI_R2023_L2_tableRBCL.qza \
-  --o-denoising-stats denoising_stats/SI_R2023_L1_denoising-statsRBCL.qza \
+  --o-representative-sequences ../rep-seqs/SI_R2023_L2_rep-seqsRBCL.qza  \
+  --o-table ../feature_tables/SI_R2023_L2_tableRBCL.qza \
+  --o-denoising-stats ../denoising_stats/SI_R2023_L1_denoising-statsRBCL.qza \
   --verbose
   
 qiime feature-table tabulate-seqs \
@@ -266,10 +264,10 @@ qiime dada2 denoise-paired  \
   --p-trunc-len-f 256  \
   --p-trunc-len-r 261  \
   --p-trim-left-f 17  \
-  --p-n-threads 0  \
-  --o-representative-sequences rep-seqs/SF_R0_rep-seqs16s.qza  \
-  --o-table feature_tables/SF_R0_table16s.qza \
-  --o-denoising-stats denoising_stats/SF_R0_denoising-stats16s.qza \
+  --p-n-threads 6 \
+  --o-representative-sequences ../rep-seqs/SF_R0_rep-seqs16s.qza  \
+  --o-table ../feature_tables/SF_R0_table16s.qza \
+  --o-denoising-stats ../denoising_stats/SF_R0_denoising-stats16s.qza \
   --verbose
   
 qiime feature-table tabulate-seqs \
@@ -285,11 +283,10 @@ qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SF_R1_demux16s.qza  \
   --p-trunc-len-f 150  \
   --p-trunc-len-r 225  \
-  --p-trim-left-f 0  \
-  --p-n-threads 0  \
-  --o-representative-sequences rep-seqs/SF_R1_rep-seqs16s.qza  \
-  --o-table feature_tables/SF_R1_table16s.qza \
-  --o-denoising-stats denoising_stats/SF_R1_denoising-stats16s.qza \
+  --p-n-threads 2  \
+  --o-representative-sequences ../rep-seqs/SF_R1_rep-seqs16s.qza  \
+  --o-table ../feature_tables/SF_R1_table16s.qza \
+  --o-denoising-stats ../denoising_stats/SF_R1_denoising-stats16s.qza \
   --verbose
   
 qiime feature-table tabulate-seqs \
@@ -305,11 +302,10 @@ qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SF_R2_demux16s.qza  \
   --p-trunc-len-f 152  \
   --p-trunc-len-r 238  \
-  --p-trim-left-f 0  \
-  --p-n-threads 0  \
-  --o-representative-sequences rep-seqs/SF_R2_rep-seqs16s.qza  \
-  --o-table feature_tables/SF_R2_table16s.qza \
-  --o-denoising-stats denoising_stats/SF_R2_denoising-stats16s.qza \
+  --p-n-threads 2  \
+  --o-representative-sequences ../rep-seqs/SF_R2_rep-seqs16s.qza  \
+  --o-table ../feature_tables/SF_R2_table16s.qza \
+  --o-denoising-stats ../denoising_stats/SF_R2_denoising-stats16s.qza \
   --verbose
   
 qiime feature-table tabulate-seqs \
@@ -325,11 +321,10 @@ qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SF_R3_demux16s.qza  \
   --p-trunc-len-f 207  \
   --p-trunc-len-r 226  \
-  --p-trim-left-f 0  \
-  --p-n-threads 0  \
-  --o-representative-sequences rep-seqs/SF_R3_rep-seqs16s.qza  \
-  --o-table feature_tables/SF_R3_table16s.qza \
-  --o-denoising-stats denoising_stats/SF_R3_denoising-stats16s.qza  \
+  --p-n-threads 2  \
+  --o-representative-sequences ../rep-seqs/SF_R3_rep-seqs16s.qza  \
+  --o-table ../feature_tables/SF_R3_table16s.qza \
+  --o-denoising-stats ../denoising_stats/SF_R3_denoising-stats16s.qza  \
   --verbose
  
 qiime feature-table tabulate-seqs \
@@ -345,12 +340,11 @@ qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SF_R4_demux16s.qza  \
   --p-trunc-len-f 233  \
   --p-trunc-len-r 254  \
-  --p-trim-left-f 0  \
-  --p-n-threads 0  \
+  --p-n-threads 2  \
   --output-dir dada2-16s  \
-  --o-representative-sequences rep-seqs/SF_R4_rep-seqs16s.qza  \
-  --o-table feature_tables/SF_R4_table16s.qza \
-  --o-denoising-stats denoising_stats/SF_R4_denoising-stats16s.qza
+  --o-representative-sequences ../rep-seqs/SF_R4_rep-seqs16s.qza  \
+  --o-table .../feature_tables/SF_R4_table16s.qza \
+  --o-denoising-stats ../denoising_stats/SF_R4_denoising-stats16s.qza
 
 qiime feature-table tabulate-seqs \
   --i-data ../rep-seqs/SF_R4_rep-seqsRBCL.qza \
@@ -368,11 +362,11 @@ qiime dada2 denoise-paired  \
   --p-trunc-len-f 134  \
   --p-trunc-len-r 176  \
   --p-trim-left-f 5  \
-  --p-n-threads 0  \
+  --p-n-threads 2  \
   --output-dir dada2-RBCL  \
-  --o-representative-sequences rep-seqs/SF_R0_rep-seqsRBCL.qza  \
-  --o-table feature_tables/SF_R0_tableRBCL.qza \
-  --o-denoising-stats denoising_stats/SF_R0_denoising-statsRBCL.qza
+  --o-representative-sequences ../rep-seqs/SF_R0_rep-seqsRBCL.qza  \
+  --o-table ../feature_tables/SF_R0_tableRBCL.qza \
+  --o-denoising-stats ../denoising_stats/SF_R0_denoising-statsRBCL.qza
   
 qiime feature-table tabulate-seqs \
   --i-data ../rep-seqs/SF_R0_rep-seqsRBCL.qza \
@@ -387,12 +381,11 @@ qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SF_R2_demuxRBCL.qza  \
   --p-trunc-len-f 178  \
   --p-trunc-len-r 178  \
-  --p-trim-left-f 0  \
-  --p-n-threads 0  \
+  --p-n-threads 2  \
   --output-dir dada2-RBCL  \
-  --o-representative-sequences rep-seqs/SF_R1_rep-seqsRBCL.qza  \
-  --o-table feature_tables/SF_R1_tableRBCL.qza \
-  --o-denoising-stats denoising_stats/SF_R1_denoising-statsRBCL.qza
+  --o-representative-sequences ../rep-seqs/SF_R1_rep-seqsRBCL.qza  \
+  --o-table ../feature_tables/SF_R1_tableRBCL.qza \
+  --o-denoising-stats ../denoising_stats/SF_R1_denoising-statsRBCL.qza
   
 qiime feature-table tabulate-seqs \
   --i-data ../rep-seqs/SF_R1_rep-seqsRBCL.qza \
@@ -427,12 +420,11 @@ qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SF_R2_demuxRBCL.qza  \
   --p-trunc-len-f 178  \
   --p-trunc-len-r 178  \
-  --p-trim-left-f 0  \
-  --p-n-threads 0  \
+  --p-n-threads 2  \
   --output-dir dada2-RBCL  \
-  --o-representative-sequences rep-seqs/SF_R3_rep-seqsRBCL.qza  \
-  --o-table feature_tables/SF_R3_tableRBCL.qza \
-  --o-denoising-stats denoising_stats/SF_R3_denoising-statsRBCL.qza
+  --o-representative-sequences ../rep-seqs/SF_R3_rep-seqsRBCL.qza  \
+  --o-table ../feature_tables/SF_R3_tableRBCL.qza \
+  --o-denoising-stats ../denoising_stats/SF_R3_denoising-statsRBCL.qza
   
 qiime feature-table tabulate-seqs \
   --i-data ../rep-seqs/SF_R3_rep-seqsRBCL.qza \
@@ -447,12 +439,11 @@ qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SF_R2_demuxRBCL.qza  \
   --p-trunc-len-f 178  \
   --p-trunc-len-r 178  \
-  --p-trim-left-f 0  \
-  --p-n-threads 0  \
+  --p-n-threads 2  \
   --output-dir dada2-RBCL  \
-  --o-representative-sequences rep-seqs/SF_R3_rep-seqsRBCL.qza  \
-  --o-table feature_tables/SF_R3_tableRBCL.qza \
-  --o-denoising-stats denoising_stats/SF_R4_denoising-statsRBCL.qza
+  --o-representative-sequences ../rep-seqs/SF_R3_rep-seqsRBCL.qza  \
+  --o-table ../feature_tables/SF_R3_tableRBCL.qza \
+  --o-denoising-stats ../denoising_stats/SF_R4_denoising-statsRBCL.qza
 
 qiime feature-table tabulate-seqs \
   --i-data ../rep-seqs/SF_R4_rep-seqsRBCL.qza \
@@ -476,9 +467,9 @@ qiime dada2 denoise-paired  \
   --p-trim-left-f 0  \
   --p-n-threads 0  \
   --output-dir dada2-16s  \
-  --o-representative-sequences rep-seqs/OR_R2023_rep-seqs16s.qza  \
-  --o-table feature_tables/OR_R2023_table16s.qza \
-  --o-denoising-stats denoising_stats/OR_R2023_denoising-stats16s.qza
+  --o-representative-sequences ../rep-seqs/OR_R2023_rep-seqs16s.qza  \
+  --o-table ../feature_tables/OR_R2023_table16s.qza \
+  --o-denoising-stats ../denoising_stats/OR_R2023_denoising-stats16s.qza
   
 qiime feature-table tabulate-seqs \
   --i-data ../rep-seqs/OR_R2023_rep-seqs16s.qza \
@@ -505,7 +496,6 @@ qiime feature-table summarize \
 
 ## RBCL Run 1
 # modify appropriatley
-cd ~/Dropbox/BMMA2025/data/qiime2_data
 qiime dada2 denoise-paired  \
   --i-demultiplexed-seqs SF_R2_demuxRBCL.qza  \
   --p-trunc-len-f numberHere  \
@@ -513,9 +503,9 @@ qiime dada2 denoise-paired  \
   --p-trim-left-f 0  \
   --p-n-threads 0  \
   --output-dir dada2-RBCL  \
-  --o-representative-sequences rep-seqs/OR_R2023_rep-seqsRBCL.qza  \
-  --o-table feature_tables/OR_R2023_tableRBCL.qza \
-  --o-denoising-stats denoising_stats/OR_R2023_denoising-statsRBCL.qza
+  --o-representative-sequences ../rep-seqs/OR_R2023_rep-seqsRBCL.qza  \
+  --o-table ../feature_tables/OR_R2023_tableRBCL.qza \
+  --o-denoising-stats ../denoising_stats/OR_R2023_denoising-statsRBCL.qza
   
 qiime feature-table tabulate-seqs \
   --i-data ../rep-seqs/OR_R2023_rep-seqsRBCL.qza \
