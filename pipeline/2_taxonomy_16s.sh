@@ -173,7 +173,6 @@ qiime feature-table summarize \
   --o-visualization tablefilt2.qzv
 
 #2d: Filter our rep seqs file so that you can see what samples you have left after filtering and subsampling
-## Q:??
 
 qiime feature-table filter-seqs \
   --i-data rep-seqs-16s.qza \
@@ -190,11 +189,15 @@ qiime feature-table tabulate-seqs \
 ## also, we will not split sequences into runs and instead will filter out contaminants across all runs
 
 # 2e. Filter out large taxonomic groups of bacteria that are known to be contaminants
-# Q:?? come back to this after talking with lauren
+
 # there are known bacteria are salt-loving and often found in buffers. 
 # they include  Halomonas, Shewanella, Oceanospirillales, and the acne bacteria Propionibacterium. 
 
-qiime taxa filter-table --i-table table16s.qza --i-taxonomy taxonomy16s.qza --p-exclude halomonas,lautropia,rothia,haemophilus,desulfuromonadales,pseudomonas,devosia,sphingomonas,solirubrobacterales,escherichia-shigella,staphylococcus,prevotellaceae,blastococcus,aeromonas,streptococcus,shewanella,oceanospirillales,propionibacteriales --o-filtered-table tablef1.qza
+qiime taxa filter-table \
+  --i-table table16s.qza \
+  --i-taxonomy taxonomy16s.qza \
+  --p-exclude halomonas,lautropia,rothia,haemophilus,desulfuromonadales,pseudomonas,devosia,sphingomonas,solirubrobacterales,escherichia-shigella,staphylococcus,prevotellaceae,blastococcus,aeromonas,streptococcus,shewanella,oceanospirillales,propionibacteriales \
+  --o-filtered-table tablef1.qza
 
 # 2f. Let's specifically look at sequences in our controls and remove the bacteria that are in them
 qiime taxa barplot \
@@ -210,34 +213,61 @@ qiime taxa barplot \
 ### Manual Filtering ###
 ########################
 
-### Sky Islands filtering ###
+# use the following rationale for selecting bacterial sequences to remove:
+# look at what bacteria show up our control samples. we then, for each one of these
+# bacteria, look up if it is in all the samples or just that control and made a call about whether or not to remove it
+# if bacteria is present in just the control sample, you want to remove it
+# however, some are also present in a lot of other samples! we don't want to lose data. if bacteria is in the control AND in more than 30 samples just leave it and don't filter it out (10% of samples)
+# you may want to make an exception if the bacterial contaminant is obviously present in one just one plate, because even though its in a lot of samples its likely a contaminant
+# another exception is if you have the contaminant in a lot of samples BUT also in a lot of the controls, get rid of it
 
-#2018 controls
-qiime taxa filter-table --i-table tablef1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea",\
-"d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae",\
-"d__Bacteria;p__Tenericutes;c__Mollicutes;o__Entomoplasmatales;f__Spiroplasmataceae;g__Spiroplasma",\
-"d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Kineosporiales;f__Kineosporiaceae;g__Kineosporia;s__uncultured;bacterium",\
-"d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae;g__Segetibacter",\
-"d__Bacteria",\
-"Unassigned" --o-filtered-table tablef2.qza
-
-qiime taxa barplot --i-table tablef2.qza --i-taxonomy taxonomy16s.qza --m-metadata-file maps/combined-map-2018-2021.txt --o-visualization taxa-bar-plots-f2.qzv
-
-#2021 controls
-qiime taxa filter-table --i-table tablef2.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Rhizobiales;f__Xanthobacteraceae;g__Bradyrhizobium;__",\
-"d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Comamonadaceae",\
-"d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Comamonadaceae;g__Acidovorax",\
-"d__Bacteria;p__Fusobacteriota;c__Fusobacteriia;o__Fusobacteriales;f__Fusobacteriaceae;g__Fusobacterium",\
-"d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Burkholderiaceae;g__Ralstonia",\
-"d__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;f__Bacillaceae;g__Bacillus",\
-"d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Caulobacterales;f__Caulobacteraceae;g__Phenylobacterium",\
-"Unassigned" --o-filtered-table tablef3.qza
+qiime taxa filter-table \
+  --i-table tablef1.qza \
+  --i-taxonomy taxonomy16s.qza \
+  --p-mode exact \
+  --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea",\
+  "d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae",\
+  "d__Bacteria;p__Tenericutes;c__Mollicutes;o__Entomoplasmatales;f__Spiroplasmataceae;g__Spiroplasma",\
+  "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Kineosporiales;f__Kineosporiaceae;g__Kineosporia;s__uncultured;bacterium",\
+  "d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae;g__Segetibacter",\
+  "d__Bacteria",\
+  "d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Rhizobiales;f__Xanthobacteraceae;g__Bradyrhizobium;__",\
+  "d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Comamonadaceae",\
+  "d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Comamonadaceae;g__Acidovorax",\
+  "d__Bacteria;p__Fusobacteriota;c__Fusobacteriia;o__Fusobacteriales;f__Fusobacteriaceae;g__Fusobacterium",\
+  "d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Burkholderiaceae;g__Ralstonia",\
+  "d__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;f__Bacillaceae;g__Bacillus",\
+  "d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Caulobacterales;f__Caulobacteraceae;g__Phenylobacterium",\
+  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Burkholderiaceae;__;__",\
+  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Neisseriaceae;D_5__Snodgrassella;D_6__Snodgrassella alvi",\
+  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Orbales;D_4__Orbaceae;D_5__Gilliamella;Ambiguous_taxa" \
+  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
+  "D_0__Bacteria;D_1__Firmicutes;D_2__Negativicutes;D_3__Selenomonadales;D_4__Veillonellaceae;D_5__Dialister;Ambiguous_taxa",\
+  "D_0__Bacteria;D_1__Proteobacteria;D_2__Alphaproteobacteria;D_3__Acetobacterales;D_4__Acetobacteraceae;D_5__Saccharibacter;Ambiguous_taxa" \
+  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Carnobacteriaceae;D_5__Granulicatella",\
+  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
+  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Cardiobacteriales;D_4__Cardiobacteriaceae;D_5__Cardiobacterium;__" \
+  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Bacillales;D_4__Bacillaceae;D_5__Bacillus",\
+  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Bacillales;D_4__Planococcaceae;D_5__Planomicrobium",\
+  "D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Actinomycetales;D_4__Actinomycetaceae;D_5__Actinomyces",\
+  "D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Corynebacteriales;D_4__Corynebacteriaceae;D_5__Corynebacterium;D_6__Corynebacterium durum",\
+  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Aerococcaceae;D_5__Abiotrophia;D_6__unidentified",\
+  "D_0__Bacteria;D_1__Fusobacteria;D_2__Fusobacteriia;D_3__Fusobacteriales;D_4__Fusobacteriaceae;D_5__Fusobacterium",\
+  "D_0__Bacteria;D_1__Fusobacteria;D_2__Fusobacteriia;D_3__Fusobacteriales;D_4__Leptotrichiaceae;D_5__Leptotrichia;D_6__Leptotrichia sp. oral taxon 212",\
+  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Neisseriaceae;D_5__Neisseria",\
+  "D_0__Bacteria;D_1__Tenericutes;D_2__Mollicutes;D_3__Entomoplasmatales;D_4__Spiroplasmataceae;D_5__Spiroplasma" \
+  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Carnobacteriaceae;D_5__Granulicatella",\
+  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Enterococcaceae;D_5__Enterococcus",\
+  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
+  "D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Corynebacteriales;D_4__Corynebacteriaceae;D_5__Corynebacterium 1"
+  "Unassigned"
+  --o-filtered-table tablef2.qza
 
 qiime taxa barplot \
-  --i-table tablef3.qza \
+  --i-table tablef2.qza \
   --i-taxonomy taxonomy16s.qza \
   --m-metadata-file maps/combined-map-2018-2021.txt \
-  --o-visualization taxa-bar-plots-f3.qzv
+  --o-visualization taxa-bar-plots-f2.qzv
 
 #Filter out controls by making new map file excluding controls
 qiime feature-table filter-samples \
@@ -247,143 +277,14 @@ qiime feature-table filter-samples \
 
 #now need to filter the rep-seqs FeatureTable[sequence] to the updated fitered FeatureTable[frequency]
 
-qiime feature-table filter-seqs \
---i-data rep-seqs-16s-filtered.qza \
---i-table tablef4.qza \
---o-filtered-data rep-seqs-16s-final-filter.qza
-
-### Sunflower filtering ###
-
-### *************************************************************************
-## X. SUNFLOWERS - SPLIT MERGED DATA TO CONTINUE CLEANING
-### ************************************************************************
-
-
-# We have 5 rounds of data. We need make a txt file for each round with the list of IDs for samples associated with each one
-
-mkdir split
-cd split
-
-# the files are made inside split and called "R0samples.txt", "R1samples.txt", "R2samples.txt", "R2samples.txt", "R4samples.txt" 
-
-qiime feature-table filter-samples --i-table tablefilt2.qza --m-metadata-file R0samples.txt --o-filtered-table tableR0.qza
-
-qiime feature-table filter-samples --i-table tablefilt2.qza --m-metadata-file R1samples.txt --o-filtered-table tableR1.qza
-
-qiime feature-table filter-samples --i-table tablefilt2.qza --m-metadata-file R2samples.txt --o-filtered-table tableR2.qza
-
-qiime feature-table filter-samples --i-table tablefilt2.qza --m-metadata-file R3samples.txt --o-filtered-table tableR3.qza
-
-qiime feature-table filter-samples --i-table tablefilt2.qza --m-metadata-file R4samples.txt --o-filtered-table stableR4.qza
-
-
-# Now that you have split the tables you can continue to filter out samples. 
-# You don't need to filter rep-seqs because we only used that for making the tree, which is done already
+# qiime feature-table filter-seqs \
+# --i-data rep-seqs-16s-filtered.qza \
+# --i-table tablef4.qza \
+# --o-filtered-data rep-seqs-16s-final-filter.qza
 
 ### *************************************************************************
 # X. SUNFLOWERS - FILTERING STEPS (PART B)
-
-
-# 5a. Filter out large taxonomic groups of bacteria that are known to be contaminants
-
-# there are known bacteria are salt-loving and often found in buffers. 
-# they include  Halomonas, Shewanella, Oceanospirillales, and the acne bacteria Propionibacterium. 
-
-
-qiime taxa filter-table --i-table tableR0.qza --i-taxonomy taxonomy16s.qza --p-exclude halomonas,lautropia,rothia,haemophilus,desulfuromonadales,pseudomonas,devosia,sphingomonas,solirubrobacterales,escherichia-shigella,staphylococcus,prevotellaceae,blastococcus,aeromonas,streptococcus,shewanella,oceanospirillales,propionibacteriales --o-filtered-table tableR0_f1.qza
-
-qiime taxa filter-table --i-table tableR1.qza --i-taxonomy taxonomy16s.qza --p-exclude halomonas,lautropia,rothia,haemophilus,desulfuromonadales,pseudomonas,devosia,sphingomonas,solirubrobacterales,escherichia-shigella,staphylococcus,prevotellaceae,blastococcus,aeromonas,streptococcus,shewanella,oceanospirillales,propionibacteriales --o-filtered-table tableR1_f1.qza
-
-qiime taxa filter-table --i-table tableR2.qza --i-taxonomy taxonomy16s.qza --p-exclude halomonas,lautropia,rothia,haemophilus,desulfuromonadales,pseudomonas,devosia,sphingomonas,solirubrobacterales,escherichia-shigella,staphylococcus,prevotellaceae,blastococcus,aeromonas,streptococcus,shewanella,oceanospirillales,propionibacteriales --o-filtered-table tableR2_f1.qza
-
-qiime taxa filter-table --i-table tableR3.qza --i-taxonomy taxonomy16s.qza --p-exclude halomonas,lautropia,rothia,haemophilus,desulfuromonadales,pseudomonas,devosia,sphingomonas,solirubrobacterales,escherichia-shigella,staphylococcus,prevotellaceae,blastococcus,aeromonas,streptococcus,shewanella,oceanospirillales,propionibacteriales --o-filtered-table tableR3_f1.qza
-
-qiime taxa filter-table --i-table tableR4.qza --i-taxonomy taxonomy16s.qza --p-exclude halomonas,lautropia,rothia,haemophilus,desulfuromonadales,pseudomonas,devosia,sphingomonas,solirubrobacterales,escherichia-shigella,staphylococcus,prevotellaceae,blastococcus,aeromonas,streptococcus,shewanella,oceanospirillales,propionibacteriales --o-filtered-table tableR4_f1.qza
-
-
-# 5b. Let's specifically look at sequences in our controls and remove the bacteria that are in them
-
-cd ../
-
-qiime taxa barplot --i-table split/tableR0_f1.qza --i-taxonomy taxonomy16s.qza --m-metadata-file maps/ffar2018map16s.txt --o-visualization split/taxa-bar-plotsR0_f1.qzv
-
-qiime taxa barplot --i-table split/tableR1_f1.qza --i-taxonomy taxonomy16s.qza --m-metadata-file maps/ffar2019_R1map16s.txt --o-visualization split/taxa-bar-plotsR1_f1.qzv
-
-qiime taxa barplot --i-table split/tableR2_f1.qza --i-taxonomy taxonomy16s.qza --m-metadata-file maps/ffar2019_R2map16s.txt --o-visualization split/taxa-bar-plotsR2_f1.qzv
-
-qiime taxa barplot --i-table split/tableR3_f1.qza --i-taxonomy taxonomy16s.qza --m-metadata-file maps/ffar2019_R3map16s.txt --o-visualization split/taxa-bar-plotsR3_f1.qzv
-
-qiime taxa barplot --i-table split/tableR4_f1.qza --i-taxonomy taxonomy16s.qza --m-metadata-file maps/ffar2019_R4map16s.txt --o-visualization split/taxa-bar-plotsR4_f1.qzv
-
-
-# for each taxa bar plot, download the .csv (level 7). There are multiple ways to filter from here. 
-# we used code from "2_1_pipeline16s.R" to generate a list of sequences in the controls
-
-# use the following rationale for selecting bacterial sequences to remove:
-# look at what bacteria show up our control samples. we then, for each one of these
-# bacteria, look up if it is in all the samples or just that control and made a call about whether or not to remove it
-# if bacteria is present in just the control sample, you want to remove it
-# however, some are also present in a lot of other samples! we don't want to lose data. if bacteria is in the control AND in more than 30 samples just leave it and don't filter it out (10% of samples)
-# you may want to make an exception if the bacterial contaminant is obviously present in one just one plate, because even though its in a lot of samples its likely a contaminant
-# another exception is if you have the contaminant in a lot of samples BUT also in a lot of the controls, get rid of it
-
-#this is one option, making a metadata file of samples to keep and filter based on that
-#qiime feature-table filter-features --i-table dada2-16s/tablefilt3.qza --m-metadata-file dada2-16s/featurestokeep_16s.txt --p-where id --o-filtered-table dada2-16s/tablefilt4.qza
-
-# this is one option, making a metadata file of samples to remove and filter based on that
-#qiime feature-table filter-features --i-table dada2-16s/tablefilt3.qza --m-metadata-file dada2-16s/contaminants_16s.txt --p-exclude-ids TRUE --o-filtered-table dada2-16s/tablefilt4.qza
-
-#this works the best with the least troubleshooting
-
-## REMOVE ALL THE ENDING ;___
-## sample :"Unassigned"
-
-# R0 dna controls: 868, 869, 873, 870, 874, 872
-# R0 illumina controls: none
-qiime taxa filter-table --i-table split/tableR0_f1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Burkholderiaceae;__;__",\
-"D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Neisseriaceae;D_5__Snodgrassella;D_6__Snodgrassella alvi",\
-"Unassigned",\
-"D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Orbales;D_4__Orbaceae;D_5__Gilliamella;Ambiguous_taxa" --o-filtered-table split/tableR0_f2.qza
-
-
-# R1 illumina controls: 5843, 5844, 5845, 5846, 5847, 5848, 5849, 5850
-# R1 dna controls: 5834, 5835, 
-qiime taxa filter-table --i-table split/tableR1_f1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
-"D_0__Bacteria;D_1__Firmicutes;D_2__Negativicutes;D_3__Selenomonadales;D_4__Veillonellaceae;D_5__Dialister;Ambiguous_taxa",\
-"Unassigned",\
-"D_0__Bacteria;D_1__Proteobacteria;D_2__Alphaproteobacteria;D_3__Acetobacterales;D_4__Acetobacteraceae;D_5__Saccharibacter;Ambiguous_taxa" --o-filtered-table split/tableR1_f2.qza
-
-
-# R2 illumina controls: 5866, 5867, 5868, 5869, 5870, 5871, 5872, 5873
-# R2 dna controls: 5836, 5837 
-qiime taxa filter-table --i-table split/tableR2_f1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Carnobacteriaceae;D_5__Granulicatella",\
-"D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
-"Unassigned",\
-"D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Cardiobacteriales;D_4__Cardiobacteriaceae;D_5__Cardiobacterium;__" --o-filtered-table split/tableR2_f2.qza
-
-
-# R3 illumina controls: 5874, 5875, 5876, 5877, 5878, 5879, 5880. 5881
-# R3 dna controls: 5838, 5839
-qiime taxa filter-table --i-table split/tableR3_f1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Bacillales;D_4__Bacillaceae;D_5__Bacillus",\
-"D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Bacillales;D_4__Planococcaceae;D_5__Planomicrobium",\
-"D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Actinomycetales;D_4__Actinomycetaceae;D_5__Actinomyces",\
-"D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Corynebacteriales;D_4__Corynebacteriaceae;D_5__Corynebacterium;D_6__Corynebacterium durum",\
-"D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Aerococcaceae;D_5__Abiotrophia;D_6__unidentified",\
-"D_0__Bacteria;D_1__Fusobacteria;D_2__Fusobacteriia;D_3__Fusobacteriales;D_4__Fusobacteriaceae;D_5__Fusobacterium",\
-"D_0__Bacteria;D_1__Fusobacteria;D_2__Fusobacteriia;D_3__Fusobacteriales;D_4__Leptotrichiaceae;D_5__Leptotrichia;D_6__Leptotrichia
-sp. oral taxon 212",\
-"Unassigned",\
-"D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Neisseriaceae;D_5__Neisseria",\
-"D_0__Bacteria;D_1__Tenericutes;D_2__Mollicutes;D_3__Entomoplasmatales;D_4__Spiroplasmataceae;D_5__Spiroplasma" --o-filtered-table split/tableR3_f2.qza
-
-
-# R4 illumina controls: 5923, 5924, 5925, 5926, 5927, 5928, 5929, 5930
-# R4 dna controls: 5840, 5841, 5842
-qiime taxa filter-table --i-table split/tableR4_f1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Carnobacteriaceae;D_5__Granulicatella",\
-"D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Enterococcaceae;D_5__Enterococcus",\
-"D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
-"Unassigned",\
-"D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Corynebacteriales;D_4__Corynebacteriaceae;D_5__Corynebacterium 1" --o-filtered-table split/tableR4_f2.qza
+### ************************************************************************
 
 
 #5c. remove control samples. make a txt file with the list of IDs for samples you want to keep, where you remove control IDs. 
@@ -391,12 +292,10 @@ qiime taxa filter-table --i-table split/tableR4_f1.qza --i-taxonomy taxonomy16s.
 
 cd split
 
-qiime feature-table filter-samples --i-table tableR0_f2.qza --m-metadata-file R0samplesNoCtrl.txt --o-filtered-table tableR0_f3.qza
-qiime feature-table filter-samples --i-table tableR1_f2.qza --m-metadata-file R1samplesNoCtrl.txt --o-filtered-table tableR1_f3.qza
-qiime feature-table filter-samples --i-table tableR2_f2.qza --m-metadata-file R2samplesNoCtrl.txt --o-filtered-table tableR2_f3.qza
-qiime feature-table filter-samples --i-table tableR3_f2.qza --m-metadata-file R3samplesNoCtrl.txt --o-filtered-table tableR3_f3.qza
-qiime feature-table filter-samples --i-table tableR4_f2.qza --m-metadata-file R4samplesNoCtrl.txt --o-filtered-table tableR4_f3.qza
-
+qiime feature-table filter-samples \
+  --i-table tableR0_f2.qza \
+  --m-metadata-file R0samplesNoCtrl.txt \
+  --o-filtered-table tableR0_f2.qza
 
 
 ### ************************************************************************
@@ -404,27 +303,6 @@ qiime feature-table filter-samples --i-table tableR4_f2.qza --m-metadata-file R4
 ### ************************************************************************
 
 # generate a tree with the merged data
-
-# #Now alignment of the reads using MAFFT.
-# qiime alignment mafft \
-#   --i-sequences rep-seqs-16s-final-filter.qza \
-#   --o-alignment aligned_repseqs16s.qza
-# 
-# #Then filter out the unconserved, highly gapped columns from alignment
-# qiime alignment mask \
-#   --i-alignment aligned_repseqs16s.qza \
-#   --o-masked-alignment masked_aligned_repseqs16s.qza
-# 
-# #And make a tree with Fasttree which creates a maximum likelihood phylogenetic trees from aligned sequences
-# #for more information on fastree, http://www.microbesonline.org/fasttree/
-# qiime phylogeny fasttree \
-#   --i-alignment masked_aligned_repseqs16s.qza \
-#   --o-tree unrooted_tree16s.qza
-# 
-# #now root it
-# qiime phylogeny midpoint-root \
-#   --i-tree unrooted_tree16s.qza \
-#   --o-rooted-tree rooted-tree16s.qza
 
 qiime phylogeny align-to-tree-mafft-fasttree \
   --i-sequences rep-seqs-16s-final-filter.qza \
