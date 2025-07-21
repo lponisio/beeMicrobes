@@ -35,11 +35,11 @@
 
 ## go back into qiime
 docker run -it \
-  -v ~/Dropbox/beeMicrobes_saved:/mnt/beeMicrobes_saved \
+  -v /Volumes/bombus/ncullen/University\ of\ Oregon\ Dropbox/Nevin\ Cullen/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
   qiime2/core:2019.1
 
 #updated silva classifier is in 16s_classifier folder
-cd ../mnt/beeMicrobes_saved/beeMicrobes_pipeline_output/training_classifiers/16s
+cd ../../mnt/beeMicrobes_pipeline_output/training_classifiers/16s
 
 ## 99 is 99% match between our seq and the database
 # qiime tools import \
@@ -100,22 +100,17 @@ qiime feature-classifier classify-sklearn \
 ### Why do we need to switch between versions of qiime for these two tasks?
 exit
 
+# which core version?? Or is the latest acceptable
 docker run -it \
-  -v ~/Dropbox/beeMicrobes_saved:/mnt/beeMicrobes_saved \
+  -v /Volumes/bombus/ncullen/University\ of\ Oregon\ Dropbox/Nevin\ Cullen/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
   qiime2/core
 
 # visualize. navigate back to where you have your taxonomy files
-cd ../mnt/beeMicrobes/beeMicrobes_pipeline_output/merged/16s
+cd ../../mnt/beeMicrobes_pipeline_output/training_classifiers/16s
 
 qiime metadata tabulate \
   --m-input-file taxonomy16s.qza \
   --o-visualization taxonomy16s.qzv
-
-#cant do this step without a master map, which we don't have for the merged files. 
-#skip for now. we still wanna do the other steps on the merged files
-# cd ../../
-# qiime taxa barplot --i-table merged/16s/table16s.qza --i-taxonomy merged/16s/taxonomy16s.qza --m-metadata-file merged/16s/maps/sky2018map16s.txt --o-visualization merged/16s/taxa-bar-plots.qzv
-
 
 ### ************************************************************************
 # 2. FILTERING STEPS (PART A)
@@ -148,7 +143,7 @@ qiime feature-table tabulate-seqs \
 # we didnt have to end making these modifications in sky islands or SI 2019 because we didnt have L. kunkeei or michinerii. but left this for future projects
 # if you have to make these changes,  make sure to change the paths below appropraitely. we kept everything labeled taxonomy16s.qza, NOT fixed
 
-## TODO: probably get rid of the following import command
+## TODO: probably get rid of the following import command?
 # qiime tools import \
 #   --type 'FeatureData[Taxonomy]' \
 #   --input-path taxonomy16s.qza/taxonomy16sfixed.txt \
@@ -167,7 +162,6 @@ qiime feature-table summarize \
   --o-visualization tablefilt1_16s.qzv 
 
 #2c. filter 2: remove sequences only found in one sample
-# Q: why bother doing this in QIIME2 instead of in R?
 
 qiime feature-table filter-features \
   --i-table tablefilt1.qza \
@@ -212,6 +206,12 @@ qiime taxa barplot \
 # now filter out taxa that are in the controls!
 # manually selected from the table16s file which ASVs were found in controls and wrote them down here
 
+########################
+### Manual Filtering ###
+########################
+
+### Sky Islands filtering ###
+
 #2018 controls
 qiime taxa filter-table --i-table tablef1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea",\
 "d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae",\
@@ -251,33 +251,37 @@ qiime feature-table filter-seqs \
 --i-data rep-seqs-16s-filtered.qza \
 --i-table tablef4.qza \
 --o-filtered-data rep-seqs-16s-final-filter.qza
-  
+
+### Sunflower filtering ###
+
+
+
 ### ************************************************************************
 ## 3. #GENERATE TREE FOR PHYLOGENETIC DIVERSITY ANALYSES
 ### ************************************************************************
 
 # generate a tree with the merged data
 
-#Now alignment of the reads using MAFFT.
-qiime alignment mafft \
-  --i-sequences rep-seqs-16s-final-filter.qza \
-  --o-alignment aligned_repseqs16s.qza
-
-#Then filter out the unconserved, highly gapped columns from alignment
-qiime alignment mask \
-  --i-alignment aligned_repseqs16s.qza \
-  --o-masked-alignment masked_aligned_repseqs16s.qza
-
-#And make a tree with Fasttree which creates a maximum likelihood phylogenetic trees from aligned sequences
-#for more information on fastree, http://www.microbesonline.org/fasttree/
-qiime phylogeny fasttree \
-  --i-alignment masked_aligned_repseqs16s.qza \
-  --o-tree unrooted_tree16s.qza
-
-#now root it
-qiime phylogeny midpoint-root \
-  --i-tree unrooted_tree16s.qza \
-  --o-rooted-tree rooted-tree16s.qza
+# #Now alignment of the reads using MAFFT.
+# qiime alignment mafft \
+#   --i-sequences rep-seqs-16s-final-filter.qza \
+#   --o-alignment aligned_repseqs16s.qza
+# 
+# #Then filter out the unconserved, highly gapped columns from alignment
+# qiime alignment mask \
+#   --i-alignment aligned_repseqs16s.qza \
+#   --o-masked-alignment masked_aligned_repseqs16s.qza
+# 
+# #And make a tree with Fasttree which creates a maximum likelihood phylogenetic trees from aligned sequences
+# #for more information on fastree, http://www.microbesonline.org/fasttree/
+# qiime phylogeny fasttree \
+#   --i-alignment masked_aligned_repseqs16s.qza \
+#   --o-tree unrooted_tree16s.qza
+# 
+# #now root it
+# qiime phylogeny midpoint-root \
+#   --i-tree unrooted_tree16s.qza \
+#   --o-rooted-tree rooted-tree16s.qza
 
 qiime phylogeny align-to-tree-mafft-fasttree \
   --i-sequences rep-seqs-16s-final-filter.qza \
@@ -285,6 +289,9 @@ qiime phylogeny align-to-tree-mafft-fasttree \
   --o-masked-alignment masked_aligned_repseqs16s.qza \
   --o-tree unrooted_tree16s.qza \
   --o-rooted-tree rooted-tree16s.qza
+
+## NOTE: We can just use align-to-tree-mafft-fasttree,
+## which also runs fastree, midpoint-root, mask and mafft as part of a pipeline
 
 ## NOTE: need to double check if the error below is still occurring
 ## now to fix the error: The table does not appear to be completely represented by the phylogeny.
@@ -327,10 +334,6 @@ qiime diversity core-metrics-phylogenetic \
   --m-metadata-file maps/combined-map-2018-2021.txt \
   --output-dir final/core_metrics16s \
   --verbose
-
-#if you want to specify the number of parallel cores running, add this to the code
-# if running on the lab computer, you have 15 cores to work with
---p-n-jobs 8
 
 #now we have lots of files in that core_metrics directory. gotta export rarefied_table.qza so we can get a qzv and convert to a csv
 #using combined full map
