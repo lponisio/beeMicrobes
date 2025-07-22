@@ -100,7 +100,6 @@ qiime feature-classifier classify-sklearn \
 ### Why do we need to switch between versions of qiime for these two tasks?
 exit
 
-# which core version?? Or is the latest acceptable
 docker run -it \
   -v /Volumes/bombus/ncullen/University\ of\ Oregon\ Dropbox/Nevin\ Cullen/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
   qiime2/core
@@ -120,34 +119,7 @@ qiime metadata tabulate \
 # We can't do all the filtering steps on the merged files, 
 # but we can do some, then we make a phylogenetic tree, then go back and filter round-specific issues
 
-# 2a. Prefilter step: The silva database does not have Lactobacillus michnerii, so our reads for Lactobacillus kunkeei are likely wrong.
-# UPDATE 7/14/25: silva database now has 17 reference sequences for L. micheneri, 15 of them are high quality with complete information.
-# Thus, the pre-filtering mentioned in 2a. isn't necessary anymore.
-
-# first visualize taxonomy16s.qzv. from the visualizer, download taxonomy16s.tsv. 
-# make a copy of taxonomy16s.tsv and rename it taxonomy16sfixed.tsv - we will make corrections here
-# then visualize repseqs16sfiltered.qzv in qiime2view
-
-## unmerged
-# qiime feature-table tabulate-seqs --i-data dada2-16s/rep-seqs-dada2-16s.qza --o-visualization dada2-16s/rep-seqs-dada2-16s.qzv
-  
-qiime feature-table tabulate-seqs \
-  --i-data rep-seqs-16s.qza \
-  --o-visualization rep-seqs-16s.qzv
-
-# using these two documents, select the sequence corresponding with the feature ids for L. kunkeei
-
-# Make corrections to taxonomy16sfixed.tsv. convert it to txt manually on your computer.
-# Convert this text file back into a qza object using qiime
-
-# we didnt have to end making these modifications in sky islands or SI 2019 because we didnt have L. kunkeei or michinerii. but left this for future projects
-# if you have to make these changes,  make sure to change the paths below appropraitely. we kept everything labeled taxonomy16s.qza, NOT fixed
-
-## TODO: probably get rid of the following import command?
-# qiime tools import \
-#   --type 'FeatureData[Taxonomy]' \
-#   --input-path taxonomy16s.qza/taxonomy16sfixed.txt \
-#   --output-path taxonomy16s.qza/taxonomy16sfixed.qza
+cd ../../mnt/beeMicrobes_pipeline_output/merged/16s
 
 #2b. filter 1: out the chloroplast and mitochondria reads 
 
@@ -203,7 +175,7 @@ qiime taxa filter-table \
 qiime taxa barplot \
   --i-table tablef1.qza \
   --i-taxonomy taxonomy16s.qza \
-  --m-metadata-file yourMergedMapHere \
+  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
   --o-visualization taxa-bar-plots-f1.qzv
 
 # now filter out taxa that are in the controls!
@@ -263,39 +235,24 @@ qiime taxa filter-table \
   "Unassigned"
   --o-filtered-table tablef2.qza
 
-qiime taxa barplot \
-  --i-table tablef2.qza \
-  --i-taxonomy taxonomy16s.qza \
-  --m-metadata-file maps/combined-map-2018-2021.txt \
-  --o-visualization taxa-bar-plots-f2.qzv
+# qiime taxa barplot \
+#   --i-table tablef2.qza \
+#   --i-taxonomy taxonomy16s.qza \
+#   --m-metadata-file maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
+#   --o-visualization taxa-bar-plots-f2.qzv
 
 #Filter out controls by making new map file excluding controls
 qiime feature-table filter-samples \
-  --i-table tablef3.qza \
-  --m-metadata-file maps/combined-map-2018-2021-noCtrl.txt \
-  --o-filtered-table tablef4.qza
+  --i-table tablef2.qza \
+  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
+  --o-filtered-table tablef3.qza
 
-#now need to filter the rep-seqs FeatureTable[sequence] to the updated fitered FeatureTable[frequency]
+#now need to filter the rep-seqs FeatureTable[sequence] to the updated filtered FeatureTable[frequency]
 
-# qiime feature-table filter-seqs \
-# --i-data rep-seqs-16s-filtered.qza \
-# --i-table tablef4.qza \
-# --o-filtered-data rep-seqs-16s-final-filter.qza
-
-### *************************************************************************
-# X. SUNFLOWERS - FILTERING STEPS (PART B)
-### ************************************************************************
-
-
-#5c. remove control samples. make a txt file with the list of IDs for samples you want to keep, where you remove control IDs. 
-# the files are made inside split and called "R0samplesNoCtrl.txt", "R1samplesNoCtrl.txt", "R2samplesNoCtrl.txt", "R2samplesNoCtrl.txt", "R4samplesNoCtrl.txt" 
-
-cd split
-
-qiime feature-table filter-samples \
-  --i-table tableR0_f2.qza \
-  --m-metadata-file R0samplesNoCtrl.txt \
-  --o-filtered-table tableR0_f2.qza
+qiime feature-table filter-seqs \
+--i-data rep-seqs-16s-filtered.qza \
+--i-table tablef3.qza \
+--o-filtered-data rep-seqs-16s-complete-filter.qza
 
 
 ### ************************************************************************
@@ -311,18 +268,15 @@ qiime phylogeny align-to-tree-mafft-fasttree \
   --o-tree unrooted_tree16s.qza \
   --o-rooted-tree rooted-tree16s.qza
 
-## NOTE: We can just use align-to-tree-mafft-fasttree,
-## which also runs fastree, midpoint-root, mask and mafft as part of a pipeline
-
 ## NOTE: need to double check if the error below is still occurring
 ## now to fix the error: The table does not appear to be completely represented by the phylogeny.
 #need to drop from the tree features not in the table anymore after filtering
 
-qiime fragment-insertion filter-features \
---i-table tablef4.qza \
---i-tree rooted-tree16s.qza \
---o-filtered-table tablef5.qza \
---o-removed-table removed-tablef5.qza
+# qiime fragment-insertion filter-features \
+# --i-table tablef3.qza \
+# --i-tree rooted-tree16s.qza \
+# --o-filtered-table tablef4.qza \
+# --o-removed-table removed-tablef4.qza
 ### *************************************************************************
 #4. DETERMINE SUBSAMPLE DEPTH
 ### *************************************************************************
@@ -333,7 +287,12 @@ qiime fragment-insertion filter-features \
 
 #For subsampling:  840 reads.  715 (90.62%) samples at the specifed sampling depth.Retained 600,600 (5.71%) features
 
-qiime diversity alpha-rarefaction --i-table tablef5.qza --i-phylogeny rooted-tree16s.qza --p-max-depth 10000 --m-metadata-file maps/combined-map-2018-2021.txt --o-visualization alphararefact16s.qzv
+qiime diversity alpha-rarefaction \
+  --i-table tablef5.qza \
+  --i-phylogeny rooted-tree16s.qza \
+  --p-max-depth 10000 \
+  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
+  --o-visualization alphararefact16s.qzv
 
 qiime feature-table summarize --i-table tablef5.qza --o-visualization tablef5.qzv
 
@@ -352,7 +311,7 @@ qiime diversity core-metrics-phylogenetic \
   --i-phylogeny rooted-tree16s.qza \
   --i-table tablef5.qza \
   --p-sampling-depth 840 \
-  --m-metadata-file maps/combined-map-2018-2021.txt \
+  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
   --output-dir final/core_metrics16s \
   --verbose
 
@@ -361,7 +320,7 @@ qiime diversity core-metrics-phylogenetic \
 qiime taxa barplot \
   --i-table final/core_metrics16s/rarefied_table.qza \
   --i-taxonomy taxonomy16s.qza \
-  --m-metadata-file maps/combined-map-2018-2021-noCtrl.txt \
+  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
   --o-visualization final/core_metrics16s/rarefiedtable16s.qzv
 
 #drag the new qzv into qiime 2 view, set taxonomic level to 7, and download a csv! put this into "final asv tables" folder
