@@ -274,11 +274,11 @@ qiime feature-table summarize \
 
 ## SF 16S Run 0
 qiime dada2 denoise-paired  \
-  --i-demultiplexed-seqs SF_R0_demux16s_fixed.qza  \
-  --p-trunc-len-f 256 \
-  --p-trunc-len-r 261 \
-  --p-trim-left-f 17 \
-  --p-n-threads 2 \
+  --i-demultiplexed-seqs SF_R0_demux16s.qza  \
+  --p-trunc-len-f 256  \
+  --p-trunc-len-r 261  \
+  --p-trim-left-f 17  \
+  --p-n-threads 6 \
   --o-representative-sequences ../rep-seqs/SF_R0_rep-seqs16s.qza \
   --o-table ../feature_tables/SF_R0_table16s.qza \
   --o-denoising-stats ../denoising_stats/SF_R0_denoising-stats16s.qza \
@@ -474,10 +474,10 @@ qiime feature-table summarize \
 
 ## OR 16S Run 2023
 qiime dada2 denoise-paired  \
-  --i-demultiplexed-seqs SF_R2_demux16s.qza  \
+  --i-demultiplexed-seqs OR_R2023_demux16s.qza  \
   --p-trunc-len-f 156  \
   --p-trunc-len-r 213  \
-  --p-n-threads 2  \
+  --p-n-threads 7  \
   --o-representative-sequences ../rep-seqs/OR_R2023_rep-seqs16s.qza  \
   --o-table ../feature_tables/OR_R2023_table16s.qza \
   --o-denoising-stats ../denoising_stats/OR_R2023_denoising-stats16s.qza \
