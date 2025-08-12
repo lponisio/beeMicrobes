@@ -10,7 +10,7 @@
 # that were clustered with denoising algorithms in the seq_prep.sh script
 
 # navigate to the dropbox folder containing saved data files
-# cd ~/Dropbox/beeMicrobes_saved/beeMicrobes_pipeline_output
+cd /Volumes/bombus/ncullen/University\ of\ Oregon\ Dropbox/Nevin\ Cullen/beeMicrobes_saved/beeMicrobes_pipeline_output/classifiers
 
 # Use a information-rich database that is clustered at 99% sequence similarity at least 
 # In our case, using Silva for 16s, and NCBI AND RDP for rbcl
@@ -21,11 +21,14 @@
 # 1a. Download the newest silva 132 database into a new working directory from https://www.arb-silva.de/download/archive/qiime
 
 # use 99_otus_16S.fasta and  consensus_taxonomy_7_levels.txt to create the training set.
-# mkdir 16s-trainingclassifier
-# cd 16s-trainingclassifier
-# wget https://www.arb-silva.de/fileadmin/silva_databases/qiime/Silva_132_release.zip
-# unzip Silva_132_release.zip
-# rm SILVA_132_release.zip
+mkdir 16s-trainingclassifier
+cd 16s-trainingclassifier
+
+# Download the SILVA 138 (Ref NR 99) SSU database:
+curl -O https://www.arb-silva.de/fileadmin/silva_databases/release_138/Exports/SILVA_138_SSURef_tax_silva.fasta.gz
+
+# Then extract it:
+gunzip SILVA_138_SSURef_tax_silva.fasta.gz
 
 #downloaded from: https://docs.qiime2.org/2023.9/data-resources/#taxonomy-classifiers-for-use-with-q2-feature-classifier
 #silva 136 SSURef N99 seq and tax files
@@ -36,25 +39,37 @@
 ## go back into qiime
 docker run -it \
   -v /Volumes/bombus/ncullen/University\ of\ Oregon\ Dropbox/Nevin\ Cullen/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
-  qiime2/core:2019.1
+  quay.io/qiime2/amplicon:2024.10
 
 #updated silva classifier is in 16s_classifier folder
-cd ../../mnt/beeMicrobes_pipeline_output/training_classifiers/16s
+cd ../../mnt/beeMicrobes_pipeline_output/classifiers/16s-trainingclassifier
 
-## 99 is 99% match between our seq and the database
-# qiime tools import \
-# --type 'FeatureData[Sequence]' \
-# --input-path silva-138-99-seqs.qza \
-# --output-path 99_otus_16S.qza
-# 
-# # import taxonomy strings. Check and see if your taxonomy file is a tab-seperated file without a header.
-# # if it doesnt have a header, specify "headerlessTSVTaxonomyFormat" since the default source formats usually have headers
-# 
-# qiime tools import \
-# --type 'FeatureData[Taxonomy]' \
-# --input-format TSVTaxonomyFormat \
-# --input-path taxonomy/16S_only/99/majority_taxonomy_7_levels.txt \
-# --output-path 99_otus_16S_taxonomy.qza
+#### Trying this from the qiime forums
+## NOTE: Since we are doing this from inside of QIIME2, we don't need to import anything into QIIME
+# Download the silva data (comes in rna form)
+qiime rescript get-silva-data \
+    --p-version '138.2' \
+    --p-target 'SSURef_NR99' \
+    --o-silva-sequences silva-138.2-ssu-nr99-rna-seqs.qza \
+    --o-silva-taxonomy silva-138.2-ssu-nr99-tax.qza
+
+# reverse transcribe the rna to DNA sequences
+qiime rescript reverse-transcribe \
+  --i-rna-sequences silva-138.2-ssu-nr99-rna-seqs.qza \
+  --o-dna-sequences silva-138.2-ssu-nr99-seqs.qza
+
+# 2. Extract just the V5–V6 region using your primers
+qiime feature-classifier extract-reads \
+  --i-sequences silva-138.2-ssu-nr99-seqs.qza \
+  --p-f-primer CMGGATTAGATACCCKGG \
+  --p-r-primer AGGGTTGCGCTCGTTG \
+  --o-reads silva-138.2-v5v6-seqs.qza
+
+# 3. Train a Naive Bayes classifier
+qiime feature-classifier fit-classifier-naive-bayes \
+  --i-reference-reads silva-138.2-v5v6-seqs.qza \
+  --i-reference-taxonomy silva-138.2-ssu-nr99-tax.qza \
+  --o-classifier classifier16s.qza
 
 # We now have two Qiime2 artifacts, 99_otus_16s.qza (reference sequences) and 99_otus_16s_taxonomy.qza (taxonomic names). 
 # trim silva to my region using my sequencing primers. We tell the algorithm our genomic primer forward and reverse sequences
@@ -64,22 +79,16 @@ cd ../../mnt/beeMicrobes_pipeline_output/training_classifiers/16s
 # NOTE: we will deal with 2 similarly named files, ref-seqs16s.qza (reference sequences) and
 # rep_seqs16s.qza (representative sequences). These are different files and are not interchangeable.
 
-qiime feature-classifier extract-reads \
-  --i-sequences silva-138-99-seqs.qza \
-  --p-f-primer CMGGATTAGATACCCKGG \
-  --p-r-primer AGGGTTGCGCTCGTTG \
-  --o-reads ref-seqs16s.qza
-
 # visualize:
-qiime feature-table tabulate-seqs \
-  --i-data ref-seqs16s.qza \
-  --o-visualization ref-seqs16s.qzv
+# qiime feature-table tabulate-seqs \
+#   --i-data ref-seqs16s.qza \
+#   --o-visualization ref-seqs16s.qzv
 #qiime tools view ref-seqs16s.qzv # (but this is big and took forever to load...).
 
 ## may need to clean up docker memory usage
-#docker system prune
+docker system prune
 
-#Train the classifier:
+# Train the classifier:
 qiime feature-classifier fit-classifier-naive-bayes \
   --i-reference-reads ref-seqs16s.qza \
   --i-reference-taxonomy silva-138-99-tax.qza  \
@@ -87,26 +96,19 @@ qiime feature-classifier fit-classifier-naive-bayes \
 
 # 1c. classify rep seqs and get the resulting taxonomic ids 
 
-# may need to install  scikit learn
-# cd ../ until you get into your main folder of computer/wherever you install stuff
-# pip install -U scikit-learn==0.19.1 #OR WHATEVER VERSION IS COMPATIBLE WITH THE CONTAINER! Might be an old version
+## NOTE: may need to install  scikit learn
+#   cd ../ until you get into your main folder of computer/wherever you install stuff
+#   pip install -U scikit-learn==0.19.1 #OR WHATEVER VERSION IS COMPATIBLE WITH THE CONTAINER! Might be an old version
 
 qiime feature-classifier classify-sklearn \
   --i-classifier classifier16s.qza \
   --i-reads  ../../merged/16s/rep-seqs16s.qza \
   --o-classification  ../../merged/16s/taxonomy16s.qza
 
-# switch to the newest version of qiime
-### Why do we need to switch between versions of qiime for these two tasks?
-exit
+# Move to the merged 16s data folder
+cd ../../merged/16s/
 
-docker run -it \
-  -v /Volumes/bombus/ncullen/University\ of\ Oregon\ Dropbox/Nevin\ Cullen/beeMicrobes_saved/beeMicrobes_pipeline_output:/mnt/beeMicrobes_pipeline_output \
-  qiime2/core
-
-# visualize. navigate back to where you have your taxonomy files
-cd ../../mnt/beeMicrobes_pipeline_output/training_classifiers/16s
-
+# generate tax-table visualization
 qiime metadata tabulate \
   --m-input-file taxonomy16s.qza \
   --o-visualization taxonomy16s.qzv
@@ -119,8 +121,6 @@ qiime metadata tabulate \
 # We can't do all the filtering steps on the merged files, 
 # but we can do some, then we make a phylogenetic tree, then go back and filter round-specific issues
 
-cd ../../mnt/beeMicrobes_pipeline_output/merged/16s
-
 #2b. filter 1: out the chloroplast and mitochondria reads 
 
 qiime taxa filter-table \
@@ -130,7 +130,7 @@ qiime taxa filter-table \
   --o-filtered-table tablefilt1.qza
   
 qiime feature-table summarize \
-  --i-table tablefilt1_16s.qza \
+  --i-table tablefilt1.qza \
   --o-visualization tablefilt1_16s.qzv 
 
 #2c. filter 2: remove sequences only found in one sample
@@ -147,7 +147,7 @@ qiime feature-table summarize \
 #2d: Filter our rep seqs file so that you can see what samples you have left after filtering and subsampling
 
 qiime feature-table filter-seqs \
-  --i-data rep-seqs-16s.qza \
+  --i-data rep-seqs16s.qza \
   --i-table tablefilt2.qza \
   --o-filtered-data rep-seqs-16s-filtered.qza
 
@@ -193,11 +193,15 @@ qiime taxa barplot \
 # you may want to make an exception if the bacterial contaminant is obviously present in one just one plate, because even though its in a lot of samples its likely a contaminant
 # another exception is if you have the contaminant in a lot of samples BUT also in a lot of the controls, get rid of it
 
-qiime taxa filter-table \
-  --i-table tablef1.qza \
-  --i-taxonomy taxonomy16s.qza \
-  --p-mode exact \
-  --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea",\
+qiime taxa filter-table --i-table tablef1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea",\
+"d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae",\
+"d__Bacteria;p__Tenericutes;c__Mollicutes;o__Entomoplasmatales;f__Spiroplasmataceae;g__Spiroplasma",\
+"d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Kineosporiales;f__Kineosporiaceae;g__Kineosporia;s__uncultured;bacterium",\
+"d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae;g__Segetibacter",\
+"d__Bacteria",\
+"Unassigned" --o-filtered-table tablef2.qza
+
+qiime taxa filter-table --i-table tablef1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea",\
   "d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae",\
   "d__Bacteria;p__Tenericutes;c__Mollicutes;o__Entomoplasmatales;f__Spiroplasmataceae;g__Spiroplasma",\
   "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Kineosporiales;f__Kineosporiaceae;g__Kineosporia;s__uncultured;bacterium",\
@@ -212,13 +216,13 @@ qiime taxa filter-table \
   "d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Caulobacterales;f__Caulobacteraceae;g__Phenylobacterium",\
   "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Burkholderiaceae;__;__",\
   "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Neisseriaceae;D_5__Snodgrassella;D_6__Snodgrassella alvi",\
-  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Orbales;D_4__Orbaceae;D_5__Gilliamella;Ambiguous_taxa" \
+  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Orbales;D_4__Orbaceae;D_5__Gilliamella;Ambiguous_taxa", \
   "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
   "D_0__Bacteria;D_1__Firmicutes;D_2__Negativicutes;D_3__Selenomonadales;D_4__Veillonellaceae;D_5__Dialister;Ambiguous_taxa",\
-  "D_0__Bacteria;D_1__Proteobacteria;D_2__Alphaproteobacteria;D_3__Acetobacterales;D_4__Acetobacteraceae;D_5__Saccharibacter;Ambiguous_taxa" \
+  "D_0__Bacteria;D_1__Proteobacteria;D_2__Alphaproteobacteria;D_3__Acetobacterales;D_4__Acetobacteraceae;D_5__Saccharibacter;Ambiguous_taxa", \
   "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Carnobacteriaceae;D_5__Granulicatella",\
   "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
-  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Cardiobacteriales;D_4__Cardiobacteriaceae;D_5__Cardiobacterium;__" \
+  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Cardiobacteriales;D_4__Cardiobacteriaceae;D_5__Cardiobacterium;__", \
   "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Bacillales;D_4__Bacillaceae;D_5__Bacillus",\
   "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Bacillales;D_4__Planococcaceae;D_5__Planomicrobium",\
   "D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Actinomycetales;D_4__Actinomycetaceae;D_5__Actinomyces",\
@@ -227,19 +231,26 @@ qiime taxa filter-table \
   "D_0__Bacteria;D_1__Fusobacteria;D_2__Fusobacteriia;D_3__Fusobacteriales;D_4__Fusobacteriaceae;D_5__Fusobacterium",\
   "D_0__Bacteria;D_1__Fusobacteria;D_2__Fusobacteriia;D_3__Fusobacteriales;D_4__Leptotrichiaceae;D_5__Leptotrichia;D_6__Leptotrichia sp. oral taxon 212",\
   "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Neisseriaceae;D_5__Neisseria",\
-  "D_0__Bacteria;D_1__Tenericutes;D_2__Mollicutes;D_3__Entomoplasmatales;D_4__Spiroplasmataceae;D_5__Spiroplasma" \
+  "D_0__Bacteria;D_1__Tenericutes;D_2__Mollicutes;D_3__Entomoplasmatales;D_4__Spiroplasmataceae;D_5__Spiroplasma", \
   "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Carnobacteriaceae;D_5__Granulicatella",\
   "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Enterococcaceae;D_5__Enterococcus",\
   "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
-  "D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Corynebacteriales;D_4__Corynebacteriaceae;D_5__Corynebacterium 1"
-  "Unassigned"
+  "D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Corynebacteriales;D_4__Corynebacteriaceae;D_5__Corynebacterium 1", \
+  "Unassigned" --o-filtered-table tablef2.qza
+  
+qiime taxa filter-table \
+  --i-table tablef1.qza \
+  --i-taxonomy taxonomy16s.qza \
+  --p-mode exact \
+  --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea,d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae,d__Bacteria;p__Tenericutes;c__Mollicutes;o__Entomoplasmatales;f__Spiroplasmataceae;g__Spiroplasma,d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Rickettsiales;f__Anaplasmataceae;g__Wolbachia,d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Pseudomonadales;f__Moraxellaceae;g__Acinetobacter,d__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;f__Enterococcaceae;g__Enterococcus,Unassigned" \
   --o-filtered-table tablef2.qza
 
-# qiime taxa barplot \
-#   --i-table tablef2.qza \
-#   --i-taxonomy taxonomy16s.qza \
-#   --m-metadata-file maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
-#   --o-visualization taxa-bar-plots-f2.qzv
+
+qiime taxa barplot \
+  --i-table tablef2.qza \
+  --i-taxonomy taxonomy16s.qza \
+  --m-metadata-file maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
+  --o-visualization taxa-bar-plots-f2.qzv
 
 #Filter out controls by making new map file excluding controls
 qiime feature-table filter-samples \
