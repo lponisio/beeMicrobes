@@ -237,11 +237,11 @@ qiime phylogeny align-to-tree-mafft-fasttree \
 ## now to fix the error: The table does not appear to be completely represented by the phylogeny.
 #need to drop from the tree features not in the table anymore after filtering
 
-# qiime fragment-insertion filter-features \
-# --i-table tablef3.qza \
-# --i-tree rooted-tree16s.qza \
-# --o-filtered-table tablef4.qza \
-# --o-removed-table removed-tablef4.qza
+qiime fragment-insertion filter-features \
+  --i-table tablef3.qza \
+  --i-tree rooted-tree16s.qza \
+  --o-filtered-table tablef4.qza \
+  --o-removed-table removed-tablef4.qza
 ### *************************************************************************
 #4. DETERMINE SUBSAMPLE DEPTH
 ### *************************************************************************
@@ -253,11 +253,11 @@ qiime phylogeny align-to-tree-mafft-fasttree \
 #For subsampling:  840 reads.  715 (90.62%) samples at the specifed sampling depth.Retained 600,600 (5.71%) features
 
 qiime diversity alpha-rarefaction \
-  --i-table tablef3.qza \
+  --i-table tablef4.qza \
   --i-phylogeny rooted-tree16s.qza \
   --p-max-depth 10000 \
-  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls2.txt \
-  --o-visualization alphararefact16s.qzv
+  --o-visualization alphararefact16s.qzv \
+  --verbose
 
 qiime feature-table summarize --i-table tablef5.qza --o-visualization tablef5.qzv
 
