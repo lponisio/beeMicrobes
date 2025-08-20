@@ -24,15 +24,6 @@ cd /Volumes/bombus/ncullen/University\ of\ Oregon\ Dropbox/Nevin\ Cullen/beeMicr
 mkdir 16s-trainingclassifier
 cd 16s-trainingclassifier
 
-# Download the SILVA 138 (Ref NR 99) SSU database:
-curl -O https://www.arb-silva.de/fileadmin/silva_databases/release_138/Exports/SILVA_138_SSURef_tax_silva.fasta.gz
-
-# Then extract it:
-gunzip SILVA_138_SSURef_tax_silva.fasta.gz
-
-#downloaded from: https://docs.qiime2.org/2023.9/data-resources/#taxonomy-classifiers-for-use-with-q2-feature-classifier
-#silva 136 SSURef N99 seq and tax files
-
 # 1b. Train feature classifier
 # import reference sequences from silva data as a qiime2 artifact
 
@@ -44,8 +35,7 @@ docker run -it \
 #updated silva classifier is in 16s_classifier folder
 cd ../../mnt/beeMicrobes_pipeline_output/classifiers/16s-trainingclassifier
 
-#### Trying this from the qiime forums
-## NOTE: Since we are doing this from inside of QIIME2, we don't need to import anything into QIIME
+## NOTE: Since we get the SILVA classifier from inside of QIIME2, we don't need to import anything into QIIME
 # Download the silva data (comes in rna form)
 qiime rescript get-silva-data \
     --p-version '138.2' \
@@ -58,7 +48,7 @@ qiime rescript reverse-transcribe \
   --i-rna-sequences silva-138.2-ssu-nr99-rna-seqs.qza \
   --o-dna-sequences silva-138.2-ssu-nr99-seqs.qza
 
-# 2. Extract just the V5–V6 region using your primers
+# 2. Extract just the V5–V6 region using your primers (this is what the Ponisio Lab likes to sequence)
 qiime feature-classifier extract-reads \
   --i-sequences silva-138.2-ssu-nr99-seqs.qza \
   --p-f-primer CMGGATTAGATACCCKGG \
@@ -193,58 +183,13 @@ qiime taxa barplot \
 # you may want to make an exception if the bacterial contaminant is obviously present in one just one plate, because even though its in a lot of samples its likely a contaminant
 # another exception is if you have the contaminant in a lot of samples BUT also in a lot of the controls, get rid of it
 
-qiime taxa filter-table --i-table tablef1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea",\
-"d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae",\
-"d__Bacteria;p__Tenericutes;c__Mollicutes;o__Entomoplasmatales;f__Spiroplasmataceae;g__Spiroplasma",\
-"d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Kineosporiales;f__Kineosporiaceae;g__Kineosporia;s__uncultured;bacterium",\
-"d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae;g__Segetibacter",\
-"d__Bacteria",\
-"Unassigned" --o-filtered-table tablef2.qza
-
-qiime taxa filter-table --i-table tablef1.qza --i-taxonomy taxonomy16s.qza --p-mode exact --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea",\
-  "d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae",\
-  "d__Bacteria;p__Tenericutes;c__Mollicutes;o__Entomoplasmatales;f__Spiroplasmataceae;g__Spiroplasma",\
-  "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Kineosporiales;f__Kineosporiaceae;g__Kineosporia;s__uncultured;bacterium",\
-  "d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae;g__Segetibacter",\
-  "d__Bacteria",\
-  "d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Rhizobiales;f__Xanthobacteraceae;g__Bradyrhizobium;__",\
-  "d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Comamonadaceae",\
-  "d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Comamonadaceae;g__Acidovorax",\
-  "d__Bacteria;p__Fusobacteriota;c__Fusobacteriia;o__Fusobacteriales;f__Fusobacteriaceae;g__Fusobacterium",\
-  "d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Burkholderiaceae;g__Ralstonia",\
-  "d__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;f__Bacillaceae;g__Bacillus",\
-  "d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Caulobacterales;f__Caulobacteraceae;g__Phenylobacterium",\
-  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Burkholderiaceae;__;__",\
-  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Neisseriaceae;D_5__Snodgrassella;D_6__Snodgrassella alvi",\
-  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Orbales;D_4__Orbaceae;D_5__Gilliamella;Ambiguous_taxa", \
-  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
-  "D_0__Bacteria;D_1__Firmicutes;D_2__Negativicutes;D_3__Selenomonadales;D_4__Veillonellaceae;D_5__Dialister;Ambiguous_taxa",\
-  "D_0__Bacteria;D_1__Proteobacteria;D_2__Alphaproteobacteria;D_3__Acetobacterales;D_4__Acetobacteraceae;D_5__Saccharibacter;Ambiguous_taxa", \
-  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Carnobacteriaceae;D_5__Granulicatella",\
-  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
-  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Cardiobacteriales;D_4__Cardiobacteriaceae;D_5__Cardiobacterium;__", \
-  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Bacillales;D_4__Bacillaceae;D_5__Bacillus",\
-  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Bacillales;D_4__Planococcaceae;D_5__Planomicrobium",\
-  "D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Actinomycetales;D_4__Actinomycetaceae;D_5__Actinomyces",\
-  "D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Corynebacteriales;D_4__Corynebacteriaceae;D_5__Corynebacterium;D_6__Corynebacterium durum",\
-  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Aerococcaceae;D_5__Abiotrophia;D_6__unidentified",\
-  "D_0__Bacteria;D_1__Fusobacteria;D_2__Fusobacteriia;D_3__Fusobacteriales;D_4__Fusobacteriaceae;D_5__Fusobacterium",\
-  "D_0__Bacteria;D_1__Fusobacteria;D_2__Fusobacteriia;D_3__Fusobacteriales;D_4__Leptotrichiaceae;D_5__Leptotrichia;D_6__Leptotrichia sp. oral taxon 212",\
-  "D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Neisseriaceae;D_5__Neisseria",\
-  "D_0__Bacteria;D_1__Tenericutes;D_2__Mollicutes;D_3__Entomoplasmatales;D_4__Spiroplasmataceae;D_5__Spiroplasma", \
-  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Carnobacteriaceae;D_5__Granulicatella",\
-  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Enterococcaceae;D_5__Enterococcus",\
-  "D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus",\
-  "D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Corynebacteriales;D_4__Corynebacteriaceae;D_5__Corynebacterium 1", \
-  "Unassigned" --o-filtered-table tablef2.qza
-  
+# had trouble filtering with one taxon per line, put all taxa on single long line
 qiime taxa filter-table \
   --i-table tablef1.qza \
   --i-taxonomy taxonomy16s.qza \
   --p-mode exact \
-  --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea,d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae,d__Bacteria;p__Tenericutes;c__Mollicutes;o__Entomoplasmatales;f__Spiroplasmataceae;g__Spiroplasma,d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Rickettsiales;f__Anaplasmataceae;g__Wolbachia,d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Pseudomonadales;f__Moraxellaceae;g__Acinetobacter,d__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;f__Enterococcaceae;g__Enterococcus,Unassigned" \
+  --p-exclude "d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Micrococcales;f__Microbacteriaceae;g__Galbitalea","d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae","d__Bacteria;p__Tenericutes;c__Mollicutes;o__Entomoplasmatales;f__Spiroplasmataceae;g__Spiroplasma","d__Bacteria;p__Actinobacteria;c__Actinobacteria;o__Kineosporiales;f__Kineosporiaceae;g__Kineosporia;s__uncultured;bacterium","d__Bacteria;p__Bacteroidetes;c__Bacteroidia;o__Chitinophagales;f__Chitinophagaceae;g__Segetibacter","d__Bacteria","d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Rhizobiales;f__Xanthobacteraceae;g__Bradyrhizobium;__","d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Comamonadaceae","d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Comamonadaceae;g__Acidovorax","d__Bacteria;p__Fusobacteriota;c__Fusobacteriia;o__Fusobacteriales;f__Fusobacteriaceae;g__Fusobacterium","d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Burkholderiales;f__Burkholderiaceae;g__Ralstonia","d__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;f__Bacillaceae;g__Bacillus","d__Bacteria;p__Proteobacteria;c__Alphaproteobacteria;o__Caulobacterales;f__Caulobacteraceae;g__Phenylobacterium","D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Burkholderiaceae;__;__","D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Neisseriaceae;D_5__Snodgrassella;D_6__Snodgrassella alvi","D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Orbales;D_4__Orbaceae;D_5__Gilliamella;Ambiguous_taxa","D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus","D_0__Bacteria;D_1__Firmicutes;D_2__Negativicutes;D_3__Selenomonadales;D_4__Veillonellaceae;D_5__Dialister;Ambiguous_taxa","D_0__Bacteria;D_1__Proteobacteria;D_2__Alphaproteobacteria;D_3__Acetobacterales;D_4__Acetobacteraceae;D_5__Saccharibacter;Ambiguous_taxa","D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Carnobacteriaceae;D_5__Granulicatella","D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus","D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Cardiobacteriales;D_4__Cardiobacteriaceae;D_5__Cardiobacterium;__","D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Bacillales;D_4__Bacillaceae;D_5__Bacillus","D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Bacillales;D_4__Planococcaceae;D_5__Planomicrobium","D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Actinomycetales;D_4__Actinomycetaceae;D_5__Actinomyces","D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Corynebacteriales;D_4__Corynebacteriaceae;D_5__Corynebacterium;D_6__Corynebacterium durum","D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Aerococcaceae;D_5__Abiotrophia;D_6__unidentified","D_0__Bacteria;D_1__Fusobacteria;D_2__Fusobacteriia;D_3__Fusobacteriales;D_4__Fusobacteriaceae;D_5__Fusobacterium","D_0__Bacteria;D_1__Fusobacteria;D_2__Fusobacteriia;D_3__Fusobacteriales;D_4__Leptotrichiaceae;D_5__Leptotrichia;D_6__Leptotrichia sp. oral taxon 212","D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Betaproteobacteriales;D_4__Neisseriaceae;D_5__Neisseria","D_0__Bacteria;D_1__Tenericutes;D_2__Mollicutes;D_3__Entomoplasmatales;D_4__Spiroplasmataceae;D_5__Spiroplasma","D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Carnobacteriaceae;D_5__Granulicatella","D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Enterococcaceae;D_5__Enterococcus","D_0__Bacteria;D_1__Firmicutes;D_2__Bacilli;D_3__Lactobacillales;D_4__Streptococcaceae;D_5__Lactococcus","D_0__Bacteria;D_1__Actinobacteria;D_2__Actinobacteria;D_3__Corynebacteriales;D_4__Corynebacteriaceae;D_5__Corynebacterium 1","Unassigned" \
   --o-filtered-table tablef2.qza
-
 
 qiime taxa barplot \
   --i-table tablef2.qza \
@@ -255,11 +200,20 @@ qiime taxa barplot \
 #Filter out controls by making new map file excluding controls
 qiime feature-table filter-samples \
   --i-table tablef2.qza \
-  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
+  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls2.txt \
   --o-filtered-table tablef3.qza
+  
+# Visualize tablef2 and f3 to make sure samples were filtered out
+qiime feature-table summarize \
+  --i-table tablef2.qza \
+  --o-visualization tablef2.qzv
+  
+qiime feature-table summarize \
+  --i-table tablef3.qza \
+  --o-visualization tablef3.qzv\
+# It worked!
 
 #now need to filter the rep-seqs FeatureTable[sequence] to the updated filtered FeatureTable[frequency]
-
 qiime feature-table filter-seqs \
 --i-data rep-seqs-16s-filtered.qza \
 --i-table tablef3.qza \
@@ -273,7 +227,7 @@ qiime feature-table filter-seqs \
 # generate a tree with the merged data
 
 qiime phylogeny align-to-tree-mafft-fasttree \
-  --i-sequences rep-seqs-16s-final-filter.qza \
+  --i-sequences rep-seqs-16s-complete-filter.qza \
   --o-alignment aligned_repseqs16s.qza \
   --o-masked-alignment masked_aligned_repseqs16s.qza \
   --o-tree unrooted_tree16s.qza \
@@ -299,10 +253,10 @@ qiime phylogeny align-to-tree-mafft-fasttree \
 #For subsampling:  840 reads.  715 (90.62%) samples at the specifed sampling depth.Retained 600,600 (5.71%) features
 
 qiime diversity alpha-rarefaction \
-  --i-table tablef5.qza \
+  --i-table tablef3.qza \
   --i-phylogeny rooted-tree16s.qza \
   --p-max-depth 10000 \
-  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
+  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls2.txt \
   --o-visualization alphararefact16s.qzv
 
 qiime feature-table summarize --i-table tablef5.qza --o-visualization tablef5.qzv
@@ -320,9 +274,9 @@ mkdir final
 ## NOTE: Need to find map files and generate combined map file.
 qiime diversity core-metrics-phylogenetic \
   --i-phylogeny rooted-tree16s.qza \
-  --i-table tablef5.qza \
+  --i-table tablef3.qza \
   --p-sampling-depth 840 \
-  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls.txt \
+  --m-metadata-file ../../maps/16s/beeMicrobes_combined_map_no-ctrls2.txt \
   --output-dir final/core_metrics16s \
   --verbose
 
