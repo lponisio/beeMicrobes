@@ -14,7 +14,7 @@ library(fossil)
 library(bipartite)
 library(dplyr)
 library(RSQLite)
-library(tidyr)
+library(tidyverse)
 library(readr)
 library(vctrs)
 library(qiime2R)
@@ -81,7 +81,7 @@ sample.metadata.intersection <- intersect(spec.combined$UniqueID.fixed, sample_n
 physeq.trim <- prune_samples(sample_names(physeq.16s) %in% sample.metadata.intersection, physeq.16s)
 
 # use the list of sample names to filter the specimen data as the first step in cleaning it
-spec.net <- spec.combined %>%
+spec.filtered <- spec.combined %>%
   filter(UniqueID.fixed %in% sample_names(physeq.trim)) %>% # filter the sample names down to those in the phyloseq object
   select(GenusSpecies, Site, Year, Date, SampleRound,Doy, Lat, Long, UniqueID.fixed, UniqueID, Sex, c(Apidae:NosemaBombi),
          Family, Genus, SubGenus, Species, PlantGenus, PlantSpecies, PlantGenusSpecies,
@@ -92,7 +92,6 @@ spec.net <- spec.combined %>%
 # also bee species-level parasitism rates.
 # maybe also calculate for higher taxa? (Genus, or even family)
 
-
 ## *****************************************************************
 ## Reorder and add spec data into phyloseq metadata
 ## *****************************************************************
@@ -101,7 +100,7 @@ spec.net <- spec.combined %>%
 rownames(spec.filtered) <- spec.filtered$UniqueID.fixed
 
 # reorder rows of spec data to match order of the phyloseq object
-spec.reordered <- spec.filtered[match(sample_names(physeq.trim), rownames(spec.filtered)), ]
+spec.net <- spec.filtered[match(sample_names(physeq.trim), rownames(spec.filtered)), ]
 
 # add the spec data into the phyloseq object
 sample_data(physeq.trim) <- sample_data(spec.reordered)
