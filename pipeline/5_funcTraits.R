@@ -6,15 +6,19 @@
 # clear environment
 rm(list=ls())
 
-# load necessary libraries/packages
+# --------------------------------------- #
+# Load packages and set working directory #
+# --------------------------------------- #
 library(FD)
 library(vegan)
 library(tidyverse)
+library(readxl)
 # set working directory to home
 setwd("~/")
 ## run the lab_paths script to appropriately set path for your computer (must be set up for each lab member)
 ## once amended with your computer's information, lab_paths.R can be saved to your home directory
 source("lab_paths.R")
+local.path
 
 ## generate path from your folder to the BMMA folder
 dir.beeMicrobes <- file.path(local.path, "beeMicrobes")
@@ -29,38 +33,59 @@ source("src/misc.R")
 # change working directory to the folder containing our data
 setwd(file.path(local.path, "beeMicrobes_saved"))
 
-# Start by loading in trait data from each project and collating it
-# read in raw trait data
-si.traits <- read.csv("./beeMicrobes_data/traits/SI_bee_traits.csv") %>% mutate(dataset = rep("SI", nrow(.)))
-sf.traits <- read.csv("./beeMicrobes_data/traits/SF_bee_traits.csv") %>% mutate(dataset = rep("SF", nrow(.)))
-or.traits <- read.csv("./beeMicrobes_data/traits/OR_bee_traits2023.csv") %>% mutate(dataset = rep("OR", nrow(.)))
+# ------------------------------- #
+# Read in specimen and trait data #
+# ------------------------------- #
 
-# do an oversimplified bind rows to merge data
-merged.traits.raw <- bind_rows(si.traits, sf.traits, or.traits)
+bee.traits.full <- read_xlsx("../PonisioLab/bee_traits/western_us_bee_traits.xlsx")
+spec.net <- read.csv("./beeMicrobes_data/specimen_data/merged_specimen_data/spec.net.csv")
 
-# replace all blank cells with NA values for appropriate handling in R
-merged.traits.raw <- merged.traits.raw %>%
-  mutate(across(everything(), ~ {
-    x <- as.character(.x)
-    x[!grepl("[[:alnum:]]", x)] <- NA
-    x
-  }))
+# ----------------------------- #
+# Merge traits for all datasets #
+# ----------------------------- #
+## NOTE: Slated for deletion, using new lab-approved bee trait values
 
-# Add column to flag duplicate species rows
-merged.traits.raw$sp.dup <- merged.traits.raw$GenusSpecies %in% merged.traits.raw$GenusSpecies[duplicated(merged.traits.raw$GenusSpecies)]
+# # Start by loading in trait data from each project and collating it
+# # read in raw trait data
+# si.traits <- read.csv("./beeMicrobes_data/traits/SI_bee_traits.csv") %>% mutate(dataset = rep("SI", nrow(.)))
+# sf.traits <- read.csv("./beeMicrobes_data/traits/SF_bee_traits.csv") %>% mutate(dataset = rep("SF", nrow(.)))
+# #or.traits <- read.csv("./beeMicrobes_data/traits/OR_bee_traits2023.csv") %>% mutate(dataset = rep("OR", nrow(.)))
+# 
+# # do an oversimplified bind rows to merge data
+# merged.traits.raw <- bind_rows(si.traits, sf.traits, or.traits)
+# 
+# # replace all blank cells with NA values for appropriate handling in R
+# merged.traits.raw <- merged.traits.raw %>%
+#   mutate(across(everything(), ~ {
+#     x <- as.character(.x)
+#     x[!grepl("[[:alnum:]]", x)] <- NA
+#     x
+#   }))
+# 
+# # Add column to flag duplicate species rows
+# merged.traits.raw$sp.dup <- merged.traits.raw$GenusSpecies %in% merged.traits.raw$GenusSpecies[duplicated(merged.traits.raw$GenusSpecies)]
+# 
+# # write trait data to csv for manual data cleaning in R (deduplicating, etc.)
+# # ONLY NEED TO RUN ONCE, SINCE FIX WAS MANUAL
+# #write.csv(merged.traits.raw, "../beeMicrobes_saved/beeMicrobes_data/traits/merged_bee_traits_WithDuplicates.csv", row.names = F)
+# 
+# ### rectified duplicate species information manually in excel
+# # Load fixed trait information back into R
+# merge.traits.2 <- read.csv("./beeMicrobes_data/traits/merged_bee_traits_dupsFixed.csv") %>%
+#   mutate(GenusSpecies = trimws(GenusSpecies)
+#          )
+# merge.traits.2$sp.dup <- merge.traits.2$GenusSpecies %in% merge.traits.2$GenusSpecies[duplicated(merge.traits.2$GenusSpecies)]
+# 
+# write.csv(merge.traits.2, "~/Desktop/merged_bee_traitsFixed_final.csv", row.names = F)
 
-# write trait data to csv for manual data cleaning in R (deduplicating, etc.)
-# ONLY NEED TO RUN ONCE, SINCE FIX WAS MANUAL
-#write.csv(merged.traits.raw, "../beeMicrobes_saved/beeMicrobes_data/traits/merged_bee_traits_WithDuplicates.csv", row.names = F)
+# --------------------------------- #
+# Programmatically clean trait data #
+# --------------------------------- #
 
-### rectified duplicate species information manually in excel
-# Load fixed trait information back into R
-merge.traits.2 <- read.csv("./beeMicrobes_data/traits/merged_bee_traits_dupsFixed.csv") %>%
-  mutate(GenusSpecies = trimws(GenusSpecies)
-         )
-merge.traits.2$sp.dup <- merge.traits.2$GenusSpecies %in% merge.traits.2$GenusSpecies[duplicated(merge.traits.2$GenusSpecies)]
+bee.traits <- c("NestLocation", "PrimaryNestMaterial",
+                "NestConstruction","NestPartitions","Sociality",
+                "MeanITD")
 
-write.csv(merge.traits.2, "~/Desktop/merged_bee_traitsFixed_final.csv", row.names = F)
 ### clean a few more elements of the data
 # unify language in different columns (decide on language for one version of factor level
 #   make all other versions the same: Rent & Renter  -> renter)
@@ -132,54 +157,68 @@ traits.m <- read.csv("./beeMicrobes_data/traits/merged_bee_traitsFixed_final.edi
          GenusSpecies = str_remove(GenusSpecies, "_SF"),
          MeanITD = as.numeric(MeanITD)
          ) %>%
-  select(GenusSpecies, Genus, NestLocation, PrimaryNestMaterial,NestConstruction, NestPartitions,
-         Sociality, MeanITD, Lecty, c(d:median.abund))
+  select(GenusSpecies, Genus, all_of(bee.traits))
+
+traits.m$NestPartitions[traits.m$GenusSpecies == "Agapostemon texanus"] <- "mud"
+
+# Fill in missing traits with the master dataset
+bee.traits.full <- bee.traits.full %>% select(GenusSpecies, bee.traits)
+bee.traits.full <- bee.traits.full[-32,] # remove duplicate with NA traits
+traits.m <- traits.m[-321,] # remove duplicate with NA traits
+traits.m <- traits.m %>% select(GenusSpecies, bee.traits)
+
+# make sure the most up-to-date trait data is included where possible
+overwritten <- traits.m %>%
+  rows_update(bee.traits.full, by = "GenusSpecies", unmatched = "ignore") %>% # overwrite where matches could be made
+  rows_patch(traits.m, by = "GenusSpecies") %>% # patch NAs with the original traits where matches couldn't be made
+  mutate(across(where(is.character) & !GenusSpecies, tolower),
+         Genus = word(GenusSpecies, 1)) # recreate the genus column
 
 # generate a genus-mean of ITD, this can be used to fill in any missing values
-genus.mean.itd <- traits.m %>%
+genus.mean.itd <- overwritten %>%
   group_by(Genus) %>%
   summarize(GenusMeanITD = mean(MeanITD, na.rm=TRUE))
 
 # fill missing values with the genus estimated mean
-traits.m$MeanITD[is.na(traits.m$MeanITD)] <- 
-  genus.mean.itd$GenusMeanITD[match(traits.m$Genus[is.na(traits.m$MeanITD)], genus.mean.itd$Genus)]
+overwritten$MeanITD[is.na(overwritten$MeanITD)] <- 
+  genus.mean.itd$GenusMeanITD[match(overwritten$Genus[is.na(overwritten$MeanITD)], genus.mean.itd$Genus)]
 
-traits.filt <- traits.m %>%
-  filter(GenusSpecies %in% spec.net$GenusSpecies) # filter to only the species for which we have microbe data
+traits.filt <- overwritten %>%
+  filter(GenusSpecies %in% spec.net$GenusSpecies,
+         if_all(all_of(bee.traits), ~ !is.na(.x))
+         )
 
-## To get the code running we'll assume missing lecty is polylectic for now
-traits.filt$Lecty[is.na(traits.filt$Lecty) == T] <- "polylectic"
-
-# assign binomials as row names
-rownames(traits.filt) <- traits.filt$GenusSpecies
-
-# Get rid of binomials (they are safely stored in the rownames)
-traits.filt$GenusSpecies <- NULL
+write.csv(traits.filt, "./beeMicrobes_data/traits/merged_traits_clean.csv", row.names = T)
 
 ## We grouped the traits based on what they are related to. For
 ## example, we have 3 nesting-related traits, so weighted each one by
 ## 1/3. This will avoid overweighting any trait type.
 
-bee.traits <- c("NestLocation", "PrimaryNestMaterial",
-                "NestConstruction","NestPartitions","Sociality",
-                "MeanITD")
-
 bee.weights <- c(rep(1/4, 4), rep(1, 2))
 
+# clean traits dataframe for later
+traits.matrix <- traits.filt[, c("GenusSpecies", bee.traits)]
+
+# assign binomials as row names
+rownames(traits.matrix) <- traits.matrix$GenusSpecies
+
+# Get rid of binomials (they are safely stored in the rownames)
+traits.matrix$GenusSpecies <- NULL
+
 ## check on unique values... no NA values!
-apply(traits.filt[, bee.traits], 2, unique)
+apply(traits.matrix[, bee.traits], 2, unique)
 
-traits.matrix <- traits.filt[, bee.traits]
+# ---------------------------------------- #
+# Species-level function diversity metrics #
+# ---------------------------------------- #
 
-## *****************************************************************
-## species-level function diversity metrics
-## *****************************************************************
 ## calculates data for two new columns we are adding to database,
 ## "originality" and "uniq"
 bee.func <- calcFuncUniqOrig(traits.matrix,
-                            traits.2.keep=bee.traits,
-                            weights=bee.weights,
-                            type="all spec")
+                             traits.2.keep=bee.traits,
+                             weights=bee.weights,
+                             type="all spec",
+                             calc.FRic=FALSE, calc.FDiv=FALSE)
 
 # remake genus species column from rownames for functional traits data objects
 bee.func$GenusSpecies <- rownames(bee.func)
@@ -198,74 +237,55 @@ all.traits <- colnames(traits.matrix)[!colnames(traits.matrix) %in%
 ## save prepped data
 spec.net <- cbind(spec.net, traits.matrix[, all.traits][match(spec.net$GenusSpecies,
                                                        traits.matrix$GenusSpecies),])
-spec.net$r.degree <- as.numeric(spec.net$r.degree)
 
-## write.csv(traits, file="../data/traits.csv",
-##           row.names=FALSE)
+write.csv(traits.matrix, file="./beeMicrobes_data/traits/traits.csv",
+          row.names=FALSE)
 
-## save(spec.net, file="../data/spec_traits.Rdata")
-## write.csv(spec.net, file="../data/spec_traits.csv", row.names=FALSE)
+save(spec.net, file="./beeMicrobes_data/specimen_data/merged_specimen_data/spec_traits.Rdata")
+write.csv(spec.net, file="./beeMicrobes_data/specimen_data/merged_specimen_data/spec_traits.csv", row.names=FALSE)
 
-## *****************************************************************
-## site-level function diversity metrics
-## *****************************************************************
-### NOTE: THE SITE-LEVEL FUNCTIONAL DIVERSITY R FUNCTION APPEARS TO GIVE THE SAME RESULTS AS THE SP-LEVEL FUNCTION.
-###       FOR NOW, NOT USING THESE DATA.
-# # make a singular aggregate site/date/sample-round grouping variable
-# spec.net$SiteYearSr <- paste(spec.net$Site, spec.net$Date,
-#                              sep=";")
-# ## only working with bees
-# bee.families <- c("Andrenidae", "Apidae", "Colletidae", "Halictidae",
-#                   "Megachilidae")
-# unique(spec.net$SiteYearSr) %>% length()
-# 
-# # Generate community matrix for counts of each bee on each site/date/sampling round
-# comms <- spec.net %>%
-#   filter(Family %in% bee.families,# subset to bee families (no flies, etc.)
-#          is.na(GenusSpecies) == F,
-#          GenusSpecies != "") %>% # filter out missing genera (shouldn't be any, but just in case)
-#   select(GenusSpecies, SiteYearSr) %>% # select only columns for binomial and site/year/sr aggregate
-#   pivot_longer(cols = -SiteYearSr) %>% # ensure data is in longform before flipping to wide-form
-#   group_by(SiteYearSr,value) %>% summarise(N=n()) %>% # generate counts of each species occurence in the dataset
-#   pivot_wider(names_from = value, values_from=N) %>% # flip data to wide-form (community matrix format)
-#   replace(is.na(.),0) %>% ungroup() %>% # ensure all NAs are counted as 0s
-#   as.data.frame(.) %>% 
-#   column_to_rownames(var = "SiteYearSr")
-# 
-# comms <- comms[, order(colnames(comms))]
-# colSums(comms) %>% sort()
-# 
-# ## check that all the species in the community matrix are in traits
-# colnames(comms)[!colnames(comms) %in% rownames(traits.matrix)]
-# 
-# # Move binomial into row names
-# traits.matrix$GenusSpecies <- rownames(traits.matrix)
-# traits.matrix$GenusSpecies <- NULL
-# 
-# # calculate bee functional uniqueness
-# ##TODO: Need to troubleshoot "functionally singular" species issue
-# ##  function not estimating FEVe, FDis, or FRic. Function only results in 2 columns:
-# ##  "uniq" and "originality", which are necessary in then next step
-# site.lvl.func <- calcFuncUniqOrigComm(traits = traits.matrix,
-#                                       traits.2.keep=bee.traits,
-#                                       weights=bee.weights,
-#                                       type="all spec",
-#                                       a = comms,
-#                                       w.abun=TRUE
-#                                       )
-# 
-# ## merge the site-year-round level functional diversity metrics
-# site.fd <- data.frame(BeeFDis=bee.func$fd$FDis,
-#                       BeeFEve=bee.func$fd$FEve,
-#                       SiteYearSr=names(bee.func$fd$FDis))
-# rownames(fd) <- NULL
-# 
-# spec.net <- merge(spec.net, fd, all.x=TRUE,
-#                   by="SiteYearSr")
-# dim(spec.net)
-# 
-# spec.net <- merge(spec.net, bee.func$by.comm.mets, all.x=TRUE)
-# dim(spec.net)
-# 
-# 
-# save(spec.net, file='../data/spec_net_fdiv.Rdata')
+# *****************************************************************
+# site-level function diversity metrics
+# *****************************************************************
+## NOTE: THE SITE-LEVEL FUNCTIONAL DIVERSITY R FUNCTION APPEARS TO GIVE THE SAME RESULTS AS THE SP-LEVEL FUNCTION.
+##       FOR NOW, NOT USING THESE DATA.
+# make a singular aggregate site/date/sample-round grouping variable
+spec.net <- spec.net %>%
+  tidyr::unite("SiteYearSR", Site, Year, SampleRound, sep = ";", remove = FALSE) %>%
+  tidyr::unite("SiteYear",   Site, Year,           sep = ";", remove = FALSE)
+
+# check how many unique aggregated levels we have
+unique(spec.net$SiteYearSR) %>% length()
+unique(spec.net$SiteYear) %>% length()
+
+## list out bee families to remove any flies or other taxa that slipped through filters
+bee.families <- c("Andrenidae", "Apidae", "Colletidae", "Halictidae",
+                  "Megachilidae")
+
+rownames(traits.matrix) <- traits.matrix$GenusSpecies
+
+# calculate bee functional uniqueness
+
+spec.net <- add_func_uniq_orig(spec.net, traits.matrix,
+                               id_col = "Site",
+                               traits.2.keep = bee.traits, weights = bee.weights,
+                               suffix = "Site",
+                               add_fd = TRUE)
+
+spec.net <- add_func_uniq_orig(spec.net, traits.matrix,
+                               id_col = "SiteYearSR",
+                               traits.2.keep = bee.traits, weights = bee.weights,
+                               suffix = "SiteYearSR",
+                               add_fd = TRUE)
+
+spec.net <- add_func_uniq_orig(spec.net, traits.matrix,
+                               id_col = "SiteYear",
+                               traits.2.keep = bee.traits, weights = bee.weights,
+                               suffix = "SiteYear",
+                               add_fd = TRUE)
+
+
+save(spec.net, file='../beeMicrobes/data/spec_net_fdiv.Rdata')
+write.csv(spec.net, "./beeMicrobes_data/specimen_data/spec.net_traits.csv")
+
+# End of the script
